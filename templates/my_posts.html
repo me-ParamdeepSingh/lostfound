@@ -4,60 +4,96 @@
 
 {% block content %}
 
-<div class="card border-0 shadow-sm p-4 mb-4">
-    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+<div class="card border-0 shadow-sm p-4 mb-4" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-4 gap-3">
         <div>
-            <h3 class="fw-bold mb-1 text-dark">
+            <h3 class="fw-extrabold mb-1 text-dark">
                 <i class="bi bi-collection-fill text-warning me-2"></i>My Posted Items
             </h3>
-            <p class="text-muted small mb-0">Manage all lost and found items you have published.</p>
+            <p class="text-muted small mb-0">Manage all lost and found listings you have reported, update status, or edit details.</p>
         </div>
-        <a href="/add/" class="btn btn-success btn-sm shadow-sm fw-semibold">
-            <i class="bi bi-plus-circle me-1"></i> Add New Item
-        </a>
+        <div>
+            <a href="/add/" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm d-flex align-items-center gap-2">
+                <i class="bi bi-plus-circle-fill"></i> Report New Item
+            </a>
+        </div>
     </div>
 
     {% if items %}
     <div class="row g-4">
         {% for item in items %}
         <div class="col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm position-relative" style="cursor: pointer;" onclick="window.location.href='/item/{{ item.id }}/'">
+            <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden" 
+                 style="cursor: pointer; border-radius: 16px; transition: transform 0.2s ease, box-shadow 0.2s ease;" 
+                 onclick="window.location.href='/item/{{ item.id }}/'">
+                
+                <!-- Image & Top Badges -->
                 <div class="position-relative">
                     {% if item.image %}
                     <img src="{{ item.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ item.title }}">
                     {% else %}
                     <div class="bg-light d-flex align-items-center justify-content-center text-muted" style="height: 200px;">
-                        <i class="bi bi-image fs-1"></i>
+                        <i class="bi bi-image fs-1 opacity-50"></i>
                     </div>
                     {% endif %}
 
-                    <span class="position-absolute top-0 end-0 m-3 badge {% if item.item_type == 'lost' %}badge-lost{% else %}badge-found{% endif %} px-3 py-1 rounded-pill shadow-sm">
+                    <!-- Left Type Badge -->
+                    <span class="position-absolute top-0 start-0 m-3 badge {% if item.item_type == 'lost' %}badge-lost{% else %}badge-found{% endif %} px-3 py-1.5 rounded-pill shadow-sm text-uppercase fw-bold" style="font-size: 0.75rem;">
                         {% if item.item_type == 'lost' %}🔴 Lost{% else %}🟢 Found{% endif %}
+                    </span>
+
+                    <!-- Right Status Badge -->
+                    <span class="position-absolute top-0 end-0 m-3 badge {% if item.status == 'resolved' %}bg-secondary text-white{% else %}bg-success text-white{% endif %} px-2.5 py-1.5 rounded-pill shadow-sm fw-bold" style="font-size: 0.75rem;">
+                        {% if item.status == 'resolved' %}
+                            <i class="bi bi-check2-all"></i> Resolved
+                        {% else %}
+                            <i class="bi bi-circle-fill" style="font-size: 0.55rem;"></i> Active
+                        {% endif %}
                     </span>
                 </div>
 
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title fw-bold text-dark mb-1">{{ item.title }}</h5>
+                <div class="card-body d-flex flex-column p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h5 class="card-title fw-bold text-dark mb-0 text-truncate" title="{{ item.title }}">{{ item.title }}</h5>
+                    </div>
                     
-                    <span class="badge bg-light text-secondary border mb-2 align-self-start small">
+                    <span class="badge bg-light text-secondary border mb-2 align-self-start small text-capitalize">
                         <i class="bi bi-tag-fill me-1"></i> {{ item.category }}
                     </span>
 
-                    <p class="text-muted small flex-grow-1">{{ item.description|truncatewords:10 }}</p>
+                    <p class="text-muted small flex-grow-1 mb-3 text-truncate-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        {{ item.description }}
+                    </p>
 
                     <div class="border-top pt-2 mt-auto text-muted small mb-3">
-                        <div><i class="bi bi-geo-alt text-danger me-1"></i> {{ item.location }}</div>
+                        <div class="text-truncate" title="{{ item.location }}"><i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ item.location }}</div>
                         <div><i class="bi bi-calendar3 text-primary me-1"></i> {{ item.date }}</div>
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <a href="/edit/{{ item.id }}/" class="btn btn-outline-primary btn-sm flex-fill fw-semibold" onclick="event.stopPropagation();">
-                            <i class="bi bi-pencil-square me-1"></i> Edit
-                        </a>
-                        <a href="/delete/{{ item.id }}/" class="btn btn-outline-danger btn-sm flex-fill fw-semibold" onclick="event.stopPropagation(); return confirm('Are you sure you want to delete this post?');">
-                            <i class="bi bi-trash me-1"></i> Delete
-                        </a>
+                    <!-- Action Controls -->
+                    <div class="d-flex flex-column gap-2" onclick="event.stopPropagation();">
+                        <div class="d-flex gap-2">
+                            {% if item.status == 'resolved' %}
+                            <a href="/toggle-status/{{ item.id }}/" class="btn btn-outline-secondary btn-sm flex-fill fw-semibold rounded-pill" title="Reactivate this post to show on Explore page">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Reactivate Post
+                            </a>
+                            {% else %}
+                            <a href="/toggle-status/{{ item.id }}/" class="btn btn-outline-success btn-sm flex-fill fw-bold rounded-pill" title="Mark item as recovered or returned">
+                                <i class="bi bi-check-circle-fill me-1"></i> Mark as Resolved
+                            </a>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <a href="/edit/{{ item.id }}/" class="btn btn-outline-primary btn-sm flex-fill fw-semibold rounded-pill">
+                                <i class="bi bi-pencil-square me-1"></i> Edit
+                            </a>
+                            <a href="/delete/{{ item.id }}/" class="btn btn-outline-danger btn-sm flex-fill fw-semibold rounded-pill" onclick="return confirm('Are you sure you want to delete this post?');">
+                                <i class="bi bi-trash me-1"></i> Delete
+                            </a>
+                        </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -65,10 +101,12 @@
     </div>
     {% else %}
     <div class="text-center py-5">
-        <i class="bi bi-folder-x text-muted" style="font-size: 3rem;"></i>
-        <h5 class="fw-bold mt-3">No Items Posted Yet</h5>
-        <p class="text-muted small">You haven't reported any lost or found items yet.</p>
-        <a href="/add/" class="btn btn-success btn-sm mt-1 shadow-sm"><i class="bi bi-plus-circle me-1"></i> Post an Item</a>
+        <i class="bi bi-folder-x text-muted" style="font-size: 3.5rem;"></i>
+        <h4 class="fw-bold mt-3 text-dark">No Items Posted Yet</h4>
+        <p class="text-muted small mx-auto" style="max-width: 400px;">You haven't reported any lost or found items yet. Click below to create your first listing.</p>
+        <a href="/add/" class="btn btn-success rounded-pill px-4 py-2 mt-1 shadow-sm fw-bold">
+            <i class="bi bi-plus-circle-fill me-1"></i> Report an Item
+        </a>
     </div>
     {% endif %}
 </div>

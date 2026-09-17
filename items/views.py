@@ -405,6 +405,20 @@ def delete_item(request, id):
     messages.info(request, f'🗑️ Post "{title}" was deleted.')
     return redirect('my_posts')
 
+
+@login_required
+def toggle_item_status(request, id):
+    item = get_object_or_404(Item, id=id, user=request.user)
+    if item.status == 'resolved':
+        item.status = 'active'
+        item.save()
+        messages.success(request, f'🔄 "{item.title}" has been reactivated and is now visible on Explore!')
+    else:
+        item.status = 'resolved'
+        item.save()
+        messages.success(request, f'🎉 "{item.title}" marked as Resolved / Returned!')
+    return redirect('my_posts')
+
 def verify_otp(request):
     if request.method == 'POST':
         user_otp = request.POST['otp']

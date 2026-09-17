@@ -8,6 +8,7 @@ urlpatterns = [
     path('my-posts/', views.my_posts, name='my_posts'),
     path('edit/<int:id>/', views.edit_item, name='edit_item'),
     path('delete/<int:id>/', views.delete_item, name='delete_item'),
+    path('toggle-status/<int:id>/', views.toggle_item_status, name='toggle_item_status'),
     path('register/', views.register, name='register'),
     path('verify-otp/', views.verify_otp, name='verify_otp'),
     path('claim/<int:id>/', views.claim_item, name='claim_item'),
