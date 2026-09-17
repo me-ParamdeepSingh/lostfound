@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2 class="mb-4">My Posts</h2>
+
+<div class="row">
+    {% for item in items %}
+    <div class="col-md-4">
+        <div class="card mb-4 shadow">
+            <img src="{{ item.image.url }}" class="card-img-top" style="height:200px; object-fit:cover;">
+
+            <div class="card-body">
+                <h5>{{ item.title }}</h5>
+
+                <span class="badge bg-{% if item.item_type == 'lost' %}danger{% else %}success{% endif %}">
+                    {{ item.item_type }}
+                </span>
+
+                <p class="mt-2">{{ item.description|truncatewords:10 }}</p>
+
+                <a href="/item/{{ item.id }}/" class="btn btn-primary btn-sm">View</a>
+                <a href="/edit/{{ item.id }}/" class="btn btn-warning btn-sm">Edit</a>
+                <a href="/delete/{{ item.id }}/" class="btn btn-danger btn-sm">Delete</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+        <p>No posts yet 😢</p>
+    {% endfor %}
+</div>
+
+{% endblock %}

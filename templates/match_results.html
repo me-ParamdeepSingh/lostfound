@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2 class="mb-4">🎉 Possible Matches Found!</h2>
+
+<p>Your item: <strong>{{ item.title }}</strong></p>
+
+<div class="row">
+    {% for match in matches %}
+    <div class="col-md-4">
+        <div class="card shadow mb-4">
+            <img src="{{ match.image.url }}" class="card-img-top" style="height:200px; object-fit:cover;">
+
+            <div class="card-body">
+                <h5>{{ match.title }}</h5>
+                <p>📍 {{ match.location }}</p>
+
+                <a href="/item/{{ match.id }}/" class="btn btn-primary btn-sm">
+                    View Item
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<a href="/" class="btn btn-secondary">Continue</a>
+
+{% endblock %}

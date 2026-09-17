@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Add Item</h2>
+
+<form method="POST" enctype="multipart/form-data" class="card p-4 shadow">
+    {% csrf_token %}
+
+    <div class="mb-3">
+        <label>Title</label>
+        <input type="text" name="title" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Description</label>
+        <textarea name="description" class="form-control"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label>Category</label>
+        <input type="text" name="category" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Location</label>
+        <input type="text" name="location" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Date</label>
+        <input type="date" name="date" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Item Type</label>
+        <select name="item_type" class="form-control">
+            <option value="lost">Lost</option>
+            <option value="found">Found</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Image</label>
+        <input type="file" name="image" class="form-control">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+{% endblock %}

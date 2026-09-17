@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Edit Item</h2>
+
+<form method="POST" enctype="multipart/form-data" class="card p-4 shadow">
+    {% csrf_token %}
+
+    <input type="text" name="title" value="{{ item.title }}" class="form-control mb-2">
+
+    <textarea name="description" class="form-control mb-2">{{ item.description }}</textarea>
+
+    <input type="text" name="category" value="{{ item.category }}" class="form-control mb-2">
+
+    <input type="text" name="location" value="{{ item.location }}" class="form-control mb-2">
+
+    <input type="date" name="date" value="{{ item.date }}" class="form-control mb-2">
+
+    <select name="item_type" class="form-control mb-2">
+        <option value="lost" {% if item.item_type == 'lost' %}selected{% endif %}>Lost</option>
+        <option value="found" {% if item.item_type == 'found' %}selected{% endif %}>Found</option>
+    </select>
+
+    <input type="file" name="image" class="form-control mb-2">
+
+    <button class="btn btn-primary">Update</button>
+</form>
+
+{% endblock %}

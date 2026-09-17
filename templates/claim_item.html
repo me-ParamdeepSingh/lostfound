@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h3>Claim Item: {{ item.title }}</h3>
+
+<form method="POST">
+    {% csrf_token %}
+    <textarea name="message" class="form-control mb-2" placeholder="Explain why this item is yours"></textarea>
+    <button class="btn btn-success">Submit Claim</button>
+</form>
+
+{% endblock %}

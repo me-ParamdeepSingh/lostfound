@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Claims</h2>
+
+{% for claim in claims %}
+<div class="card p-3 mb-2">
+    <h5>{{ claim.item.title }}</h5>
+    <p><strong>User:</strong> {{ claim.user.username }}</p>
+    <p>{{ claim.message }}</p>
+    <p>Status: {{ claim.status }}</p>
+    {% if claim.status == 'active' %}
+    <a href="/approve-claim/{{ claim.id }}/" class="btn btn-success btn-sm">Approve</a>
+    <a href="/reject-claim/{{ claim.id }}/" class="btn btn-danger btn-sm">Reject</a>
+    {% endif %}
+</div>
+
+{% empty %}
+<p>No claims yet 😢</p>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2 class="mb-4">My Claims</h2>
+
+{% for claim in claims %}
+<div class="card p-3 mb-3 shadow">
+    
+    <div class="row">
+        <div class="col-md-3">
+            <img src="{{ claim.item.image.url }}" class="img-fluid rounded">
+        </div>
+
+        <div class="col-md-9">
+            <h5>{{ claim.item.title }}</h5>
+
+            <p><strong>📍 Location:</strong> {{ claim.item.location }}</p>
+
+            <p><strong>Your Message:</strong> {{ claim.message }}</p>
+
+            <p>
+                <strong>Status:</strong> 
+                <span class="badge 
+                    {% if claim.status == 'pending' %}bg-warning
+                    {% elif claim.status == 'approved' %}bg-success
+                    {% else %}bg-danger
+                    {% endif %}">
+                    {{ claim.status|title }}
+                </span>
+            </p>
+
+            <a href="/item/{{ claim.item.id }}/" class="btn btn-primary btn-sm">View Item</a>
+        </div>
+    </div>
+
+</div>
+
+{% empty %}
+<p>No claims yet 😢</p>
+{% endfor %}
+
+{% endblock %}
