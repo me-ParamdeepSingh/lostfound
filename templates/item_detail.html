@@ -15,12 +15,17 @@
         <div class="row g-4">
             <!-- Left: Image & Map -->
             <div class="col-lg-6">
-                <div class="card border-0 shadow-sm p-3 mb-4 bg-white">
+                <div class="card border-0 shadow-sm p-3 mb-4 bg-white position-relative">
                     {% if item.image %}
-                    <img src="{{ item.image.url }}" class="img-fluid rounded-3 shadow-sm" style="width: 100%; max-height: 420px; object-fit: contain; background:#f8fafc;" alt="{{ item.title }}">
+                    <div class="position-relative overflow-hidden rounded-3" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#imageLightboxModal" title="Click to inspect in full resolution">
+                        <img src="{{ item.image.url }}" class="img-fluid rounded-3 shadow-sm w-100" style="max-height: 420px; object-fit: contain; background:#f8fafc; transition: transform 0.3s ease;" alt="{{ item.title }}">
+                        <span class="position-absolute bottom-0 end-0 m-3 badge bg-dark bg-opacity-75 text-white px-3 py-1.5 rounded-pill shadow-sm small">
+                            <i class="bi bi-zoom-in me-1"></i> Click to Zoom Fullscreen
+                        </span>
+                    </div>
                     {% else %}
                     <div class="bg-light d-flex align-items-center justify-content-center rounded-3 text-muted" style="height: 300px;">
-                        <i class="bi bi-image fs-1"></i>
+                        <i class="bi bi-image fs-1 opacity-50"></i>
                     </div>
                     {% endif %}
                 </div>
@@ -252,6 +257,30 @@
 
     </div>
 </div>
+
+{% if item.image %}
+<!-- Image Lightbox Modal -->
+<div class="modal fade" id="imageLightboxModal" tabindex="-1" aria-labelledby="imageLightboxModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border-radius: 20px; overflow: hidden;">
+            <div class="modal-header border-0 pb-0 text-white">
+                <h6 class="modal-title fw-bold text-truncate" id="imageLightboxModalLabel">
+                    <i class="bi bi-image me-1 text-primary"></i> {{ item.title }}
+                </h6>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{{ item.image.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-light rounded-pill px-3 py-1 small" title="Open full raw image in new tab">
+                        <i class="bi bi-box-arrow-up-right me-1"></i> Raw Resolution
+                    </a>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <img src="{{ item.image.url }}" class="img-fluid rounded-3 shadow" style="max-height: 75vh; object-fit: contain;" alt="{{ item.title }}">
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 {% endblock %}
 
