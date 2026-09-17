@@ -138,12 +138,19 @@
     const defaultLng = 77.2090;
 
     function initPickerMap() {
-        pickerMap = L.map('pickerMap').setView([defaultLat, defaultLng], 12);
+        pickerMap = L.map('pickerMap', {
+            zoomControl: true
+        }).setView([defaultLat, defaultLng], 12);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 20
         }).addTo(pickerMap);
+
+        setTimeout(() => {
+            if (pickerMap) pickerMap.invalidateSize();
+        }, 300);
 
         // Click on map to place or move marker
         pickerMap.on('click', function(e) {

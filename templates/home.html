@@ -163,12 +163,17 @@
             gridContainer.classList.add('d-none');
             mapContainer.classList.remove('d-none');
 
-            // Initialize or invalidate map size
-            if (!mapInstance) {
-                initMainMap();
-            } else {
-                setTimeout(() => { mapInstance.invalidateSize(); }, 200);
-            }
+            // Ensure container is visible in DOM before initializing / invalidating map
+            setTimeout(() => {
+                if (!mapInstance) {
+                    initMainMap();
+                } else {
+                    mapInstance.invalidateSize(true);
+                    if (markersLayer && markersLayer.getLayers().length > 0) {
+                        mapInstance.fitBounds(markersLayer.getBounds().pad(0.15));
+                    }
+                }
+            }, 100);
         } else {
             mapBtn.classList.remove('active');
             gridBtn.classList.add('active');
@@ -180,43 +185,54 @@
     function createMarkerIcon(isLost) {
         const color = isLost ? '#ef4444' : '#10b981';
         const iconSvg = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="32" height="42">
-                <path fill="${color}" stroke="#ffffff" stroke-width="16" d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="34" height="44">
+                <path fill="${color}" stroke="#ffffff" stroke-width="18" d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
             </svg>
         `;
         return L.divIcon({
             html: iconSvg,
             className: 'custom-pin-icon',
-            iconSize: [32, 42],
-            iconAnchor: [16, 42],
-            popupAnchor: [0, -40]
+            iconSize: [34, 44],
+            iconAnchor: [17, 44],
+            popupAnchor: [0, -42]
         });
     }
 
     function initMainMap() {
-        // Default center (e.g., India center / Delhi)
+        const mapElement = document.getElementById('mainMap');
+        if (!mapElement) return;
+
+        // Default center: India / Delhi
         const defaultLat = 28.6139;
         const defaultLng = 77.2090;
 
-        mapInstance = L.map('mainMap').setView([defaultLat, defaultLng], 12);
+        mapInstance = L.map('mainMap', {
+            zoomControl: true,
+            scrollWheelZoom: true
+        }).setView([defaultLat, defaultLng], 12);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        // Fast & beautiful CartoDB Voyager tiles (OpenStreetMap data)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
         }).addTo(mapInstance);
 
         markersLayer = L.featureGroup().addTo(mapInstance);
 
         if (mapItems && mapItems.length > 0) {
+            let validMarkersCount = 0;
+
             mapItems.forEach(item => {
-                if (item.latitude && item.longitude) {
+                if (item.latitude !== null && item.longitude !== null && !isNaN(item.latitude) && !isNaN(item.longitude)) {
+                    validMarkersCount++;
                     const isLost = item.item_type === 'lost';
                     const marker = L.marker([item.latitude, item.longitude], {
                         icon: createMarkerIcon(isLost)
                     });
 
                     const popupContent = `
-                        <div style="width: 240px; font-family: inherit;">
+                        <div style="width: 250px; font-family: inherit;">
                             ${item.image_url ? `<img src="${item.image_url}" style="width:100%; height:130px; object-fit:cover; display:block;">` : ''}
                             <div style="padding: 12px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
@@ -226,8 +242,8 @@
                                     <span style="font-size:11px; color:#64748b;">${item.date}</span>
                                 </div>
                                 <h6 style="font-weight:700; margin:0 0 4px; color:#0f172a; font-size:14px;">${item.title}</h6>
-                                <p style="font-size:12px; color:#475569; margin:0 0 6px;"><i class="bi bi-geo-alt"></i> ${item.location}</p>
-                                <a href="/item/${item.id}/" class="btn btn-sm btn-primary w-100" style="font-size:12px; font-weight:600; border-radius:8px;">View Full Details</a>
+                                <p style="font-size:12px; color:#475569; margin:0 0 8px;"><i class="bi bi-geo-alt text-danger"></i> ${item.location}</p>
+                                <a href="/item/${item.id}/" class="btn btn-sm btn-primary w-100" style="font-size:12px; font-weight:600; border-radius:8px;">View Details</a>
                             </div>
                         </div>
                     `;
@@ -237,14 +253,21 @@
                 }
             });
 
-            if (markersLayer.getLayers().length > 0) {
-                mapInstance.fitBounds(markersLayer.getBounds().pad(0.15));
+            if (validMarkersCount > 0) {
+                mapInstance.fitBounds(markersLayer.getBounds().pad(0.2));
             } else {
                 document.getElementById('noMapItemsAlert').classList.remove('d-none');
             }
         } else {
             document.getElementById('noMapItemsAlert').classList.remove('d-none');
         }
+
+        // Invalidate size once tiles start loading
+        setTimeout(() => {
+            if (mapInstance) {
+                mapInstance.invalidateSize(true);
+            }
+        }, 250);
     }
 
     function locateUserOnMap() {
@@ -272,5 +295,11 @@
             );
         }
     }
+
+    window.addEventListener('resize', () => {
+        if (mapInstance) {
+            mapInstance.invalidateSize();
+        }
+    });
 </script>
 {% endblock %}

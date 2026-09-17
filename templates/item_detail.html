@@ -187,12 +187,19 @@
         const itemLng = {{ item.longitude }};
         const isLost = "{{ item.item_type }}" === "lost";
 
-        const detailMap = L.map('itemDetailMap').setView([itemLat, itemLng], 15);
+        const detailMap = L.map('itemDetailMap', {
+            zoomControl: true
+        }).setView([itemLat, itemLng], 15);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 20
         }).addTo(detailMap);
+
+        setTimeout(() => {
+            if (detailMap) detailMap.invalidateSize();
+        }, 300);
 
         const color = isLost ? '#ef4444' : '#10b981';
         const iconSvg = `
