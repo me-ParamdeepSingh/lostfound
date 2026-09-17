@@ -33,6 +33,8 @@
             max-width: 520px;
             width: 100%;
             overflow: hidden;
+            position: relative;
+            z-index: 10;
         }
 
         .portal-header {
@@ -69,9 +71,82 @@
             color: #047857;
             border-style: solid;
         }
+
+        /* Loading / Processing Overlay */
+        #processingOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 99999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            animation: fadeIn 0.25s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .spinner-radar {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .spin-ring {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.12);
+            border-top-color: #6366f1;
+            border-right-color: #38bdf8;
+            animation: spinGlow 0.85s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
+            position: absolute;
+            box-shadow: 0 0 35px rgba(99, 102, 241, 0.6);
+        }
+
+        .pulse-icon {
+            font-size: 2rem;
+            color: #38bdf8;
+            animation: pulseIcon 1.2s ease-in-out infinite;
+        }
+
+        @keyframes spinGlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulseIcon {
+            0%, 100% { transform: scale(0.85); opacity: 0.75; }
+            50% { transform: scale(1.18); opacity: 1; }
+        }
     </style>
 </head>
 <body>
+
+    <!-- Fullscreen Loading / Dispatching Animation Overlay -->
+    <div id="processingOverlay">
+        <div class="spinner-radar">
+            <div class="spin-ring"></div>
+            <i class="bi bi-send-check-fill pulse-icon"></i>
+        </div>
+        <h4 class="fw-bold mb-2">Dispatching Alert to Owner...</h4>
+        <p class="text-white-50 small mb-0" style="max-width: 360px;">
+            Sending location coordinates &amp; notification securely to the owner. Please do not close this window.
+        </p>
+    </div>
 
     <div class="portal-card">
 
@@ -139,7 +214,7 @@
             {% endif %}
 
             <!-- Message Form to Finder -->
-            <form action="" method="POST" id="scanFinderForm">
+            <form action="" method="POST" id="scanFinderForm" onsubmit="handleFormSubmit(event)">
                 {% csrf_token %}
 
                 <input type="hidden" name="latitude" id="id_latitude" value="">
@@ -164,7 +239,7 @@
 
                 <div class="mb-3">
                     <label class="form-label fw-bold small text-dark">Where is the item right now? <span class="text-danger">*</span></label>
-                    <input type="text" name="location_text" class="form-control" placeholder="e.g. Left at Central Cafe front desk / In my custody" required>
+                    <input type="text" name="location_text" id="id_location_text" class="form-control" placeholder="e.g. Left at Central Cafe front desk / In my custody" required>
                 </div>
 
                 <div class="mb-3">
@@ -182,8 +257,12 @@
                 </div>
 
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow">
-                        <i class="bi bi-send-fill me-1"></i> Send Instant Notification to Owner
+                    <button type="submit" id="submitBtn" class="btn btn-primary btn-lg rounded-pill fw-bold shadow">
+                        <span id="btnText"><i class="bi bi-send-fill me-1"></i> Send Instant Notification to Owner</span>
+                        <span id="btnSpinner" class="d-none">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Dispatching Alert...
+                        </span>
                     </button>
                 </div>
             </form>
@@ -233,6 +312,31 @@
             },
             { timeout: 10000, enableHighAccuracy: true }
         );
+    }
+
+    function handleFormSubmit(event) {
+        const form = document.getElementById('scanFinderForm');
+        if (!form.checkValidity()) {
+            return; // Let browser show native validation tooltips
+        }
+
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const overlay = document.getElementById('processingOverlay');
+
+        // Show button spinner & disable double-click
+        btnText.classList.add('d-none');
+        btnSpinner.classList.remove('d-none');
+        submitBtn.disabled = true;
+
+        // Show glowing overlay
+        if (overlay) {
+            overlay.style.display = 'flex';
+        }
+
+        // Allow form to submit normally
+        form.submit();
     }
     </script>
 </body>
