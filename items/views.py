@@ -12,6 +12,7 @@ from rapidfuzz import fuzz
 from lostfound import settings
 from .models import Item, Profile, Claim, Conversation, ChatMessage, SmartTag
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 import random
 from django.core.mail import send_mail
 from .forms import RegisterForm
@@ -136,6 +137,8 @@ def add_item(request):
             latitude=latitude,
             longitude=longitude
         )
+        
+        messages.success(request, f'🎉 "{item.title}" has been posted successfully!')
         
         # AI Semantic Match Detection for newly posted item
         ai_matches = find_ai_matches(item, limit=6)
@@ -284,8 +287,10 @@ def toggle_share_contact(request, chat_id):
 
     if conversation.contact_shared:
         announcement = f"🔓 {request.user.username} (Item Owner) has granted permission and shared their direct contact details with you!"
+        messages.success(request, "🔓 Direct contact details shared with user.")
     else:
         announcement = f"🔒 {request.user.username} has revoked contact details access."
+        messages.info(request, "🔒 Direct contact details access revoked.")
 
     ChatMessage.objects.create(
         conversation=conversation,
@@ -386,6 +391,7 @@ def edit_item(request, id):
             item.image = request.FILES['image']
 
         item.save()
+        messages.success(request, f'✅ Post "{item.title}" updated successfully!')
         return redirect('my_posts')
 
     return render(request, 'edit_item.html', {'item': item})
@@ -394,8 +400,9 @@ def edit_item(request, id):
 @login_required
 def delete_item(request, id):
     item = get_object_or_404(Item, id=id, user=request.user)
-
+    title = item.title
     item.delete()
+    messages.info(request, f'🗑️ Post "{title}" was deleted.')
     return redirect('my_posts')
 
 def verify_otp(request):
@@ -419,6 +426,7 @@ def verify_otp(request):
             )
 
             login(request, user)
+            messages.success(request, f'🎉 Welcome, {user.username}! Your account has been verified.')
             return redirect('home')
 
     return render(request, 'verify_otp.html')
@@ -461,6 +469,7 @@ def claim_item(request, id):
             fail_silently=True,
         )
 
+        messages.success(request, f'📨 Claim request sent for "{item.title}". The owner has been notified via email.')
         return redirect('home')
 
     return render(request, 'claim_item.html', {'item': item})
@@ -507,6 +516,7 @@ def approve_claim(request, id):
         fail_silently=True,
     )
 
+    messages.success(request, f'✅ Claim approved for "{claim.item.title}". Item marked as resolved!')
     return redirect('view_claims')
 
 
@@ -539,6 +549,7 @@ def reject_claim(request, id):
         fail_silently=True,
     )
 
+    messages.warning(request, f'❌ Claim rejected for "{claim.item.title}".')
     return redirect('view_claims')
 
 @login_required
@@ -635,13 +646,16 @@ def create_smart_tag(request):
                 category=category,
                 reward_note=reward_note
             )
+            messages.success(request, f'🏷️ Smart QR Tag for "{item_name}" generated successfully!')
     return redirect('my_smart_tags')
 
 
 @login_required
 def delete_smart_tag(request, tag_code):
     tag = get_object_or_404(SmartTag, tag_code=tag_code, user=request.user)
+    tag_name = tag.item_name
     tag.delete()
+    messages.info(request, f'🗑️ Smart Tag for "{tag_name}" was deleted.')
     return redirect('my_smart_tags')
 
 

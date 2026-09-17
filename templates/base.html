@@ -193,6 +193,34 @@
         {% block content %}{% endblock %}
     </div>
 
+    <!-- Global Toast / Flash Messages Container -->
+    <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 100000;">
+        {% if messages %}
+            {% for message in messages %}
+            <div class="toast show align-items-center border-0 shadow-lg mb-2" role="alert" aria-live="assertive" aria-atomic="true" 
+                 style="background: #ffffff; border-radius: 14px; overflow: hidden; border-left: 5px solid {% if message.tags == 'error' or message.tags == 'danger' %}#ef4444{% elif message.tags == 'warning' %}#f59e0b{% elif message.tags == 'info' %}#3b82f6{% else %}#10b981{% endif %} !important; box-shadow: 0 10px 30px rgba(0,0,0,0.12) !important;">
+                <div class="d-flex p-2 align-items-center">
+                    <div class="ps-2 pe-3">
+                        {% if message.tags == 'error' or message.tags == 'danger' %}
+                            <i class="bi bi-x-circle-fill fs-4 text-danger"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+                        {% elif message.tags == 'info' %}
+                            <i class="bi bi-info-circle-fill fs-4 text-primary"></i>
+                        {% else %}
+                            <i class="bi bi-check-circle-fill fs-4 text-success"></i>
+                        {% endif %}
+                    </div>
+                    <div class="toast-body p-0 flex-grow-1 text-dark fw-semibold" style="font-size: 0.9rem;">
+                        {{ message }}
+                    </div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
     <!-- Global Processing / Loading Overlay -->
     <div id="globalProcessingOverlay" class="d-none" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center;">
         <div style="position: relative; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center;">
@@ -209,6 +237,13 @@
         @keyframes pulseIcon {
             0%, 100% { transform: scale(0.85); opacity: 0.7; }
             50% { transform: scale(1.15); opacity: 1; }
+        }
+        .toast {
+            animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
     </style>
 
@@ -227,6 +262,57 @@
                 overlay.classList.remove('d-none');
                 overlay.style.display = 'flex';
             }
+        }
+
+        // Auto-dismiss server toasts after 4.5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const toastElList = document.querySelectorAll('.toast');
+            toastElList.forEach(function (toastEl) {
+                const toast = new bootstrap.Toast(toastEl, { delay: 4500 });
+                toast.show();
+            });
+        });
+
+        // Client-side Toast Trigger Helper
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const iconMap = {
+                success: '<i class="bi bi-check-circle-fill fs-4 text-success"></i>',
+                error: '<i class="bi bi-x-circle-fill fs-4 text-danger"></i>',
+                danger: '<i class="bi bi-x-circle-fill fs-4 text-danger"></i>',
+                warning: '<i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>',
+                info: '<i class="bi bi-info-circle-fill fs-4 text-primary"></i>'
+            };
+
+            const borderMap = {
+                success: '#10b981',
+                error: '#ef4444',
+                danger: '#ef4444',
+                warning: '#f59e0b',
+                info: '#3b82f6'
+            };
+
+            const toastDiv = document.createElement('div');
+            toastDiv.className = 'toast show align-items-center border-0 shadow-lg mb-2';
+            toastDiv.setAttribute('role', 'alert');
+            toastDiv.style.cssText = `background: #ffffff; border-radius: 14px; overflow: hidden; border-left: 5px solid ${borderMap[type] || borderMap.success} !important; box-shadow: 0 10px 30px rgba(0,0,0,0.12) !important;`;
+
+            toastDiv.innerHTML = `
+                <div class="d-flex p-2 align-items-center">
+                    <div class="ps-2 pe-3">${iconMap[type] || iconMap.success}</div>
+                    <div class="toast-body p-0 flex-grow-1 text-dark fw-semibold" style="font-size: 0.9rem;">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+
+            container.appendChild(toastDiv);
+            const bsToast = new bootstrap.Toast(toastDiv, { delay: 4500 });
+            bsToast.show();
+            toastDiv.addEventListener('hidden.bs.toast', () => toastDiv.remove());
         }
     </script>
     {% block extra_scripts %}{% endblock %}
