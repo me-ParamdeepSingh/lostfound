@@ -84,7 +84,7 @@
     <div class="row g-4">
         {% for item in items %}
         <div class="col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm">
+            <div class="card h-100 border-0 shadow-sm item-card position-relative" style="cursor: pointer;" onclick="window.location.href='/item/{{ item.id }}/'">
                 <div class="position-relative">
                     {% if item.image %}
                     <img src="{{ item.image.url }}" class="card-img-top" style="height: 220px; object-fit: cover;" alt="{{ item.title }}">
@@ -121,9 +121,24 @@
                         <div><i class="bi bi-calendar3 text-primary me-1"></i> <strong>Date:</strong> {{ item.date }}</div>
                     </div>
 
+                    <!-- Context-Aware Action Button -->
+                    {% if user.is_authenticated and user == item.user %}
+                    <a href="/edit/{{ item.id }}/" class="btn btn-outline-secondary btn-sm fw-semibold mt-3 w-100" onclick="event.stopPropagation();">
+                        <i class="bi bi-pencil-square me-1"></i> Manage My Post
+                    </a>
+                    {% elif item.item_type == 'found' %}
+                    <a href="/claim/{{ item.id }}/" class="btn btn-warning fw-bold mt-3 w-100 shadow-sm" onclick="event.stopPropagation();">
+                        <i class="bi bi-hand-index-thumb-fill me-1"></i> Claim Item
+                    </a>
+                    {% elif item.item_type == 'lost' %}
+                    <a href="{% if user.is_authenticated %}/chat/start/{{ item.id }}/{% else %}/accounts/login/?next=/item/{{ item.id }}/{% endif %}" class="btn btn-primary fw-semibold mt-3 w-100 shadow-sm" onclick="event.stopPropagation();">
+                        <i class="bi bi-chat-dots-fill me-1"></i> Found This? Chat with Owner
+                    </a>
+                    {% else %}
                     <a href="/item/{{ item.id }}/" class="btn btn-outline-primary fw-semibold mt-3 w-100">
                         View Details <i class="bi bi-arrow-right ms-1"></i>
                     </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
