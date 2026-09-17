@@ -79,10 +79,14 @@
                             <!-- Action Buttons -->
                             <div class="d-flex flex-wrap gap-2 mt-2">
                                 <a href="/smart-tags/{{ item.tag.tag_code }}/print/" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold shadow-sm">
-                                    <i class="bi bi-printer-fill"></i> Print / Download
+                                    <i class="bi bi-printer-fill"></i> Print / Sticker
                                 </a>
 
-                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="copyTagLink('{{ item.scan_url }}', this)">
+                                <a href="data:image/png;base64,{{ item.qr_b64 }}" download="SmartTag_{{ item.tag.item_name|slugify }}_QR.png" class="btn btn-sm btn-outline-success rounded-pill px-2.5" title="Download QR PNG directly">
+                                    <i class="bi bi-download"></i> Save QR
+                                </a>
+
+                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-2.5" onclick="copyTagLink('{{ item.scan_url }}', this)" title="Copy direct web scan link">
                                     <i class="bi bi-clipboard"></i> Copy Link
                                 </button>
 
