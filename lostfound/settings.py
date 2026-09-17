@@ -64,6 +64,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'items.context_processors.claim_count',
                 'items.context_processors.claim_notification',
+                'items.context_processors.chat_notification',
             ],
         },
     },

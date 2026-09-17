@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Messages &amp; In-App Chats | Lost &amp; Found{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card border-0 shadow-sm p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">
+                        <i class="bi bi-chat-dots-fill text-primary me-2"></i>My Messages &amp; Chats
+                    </h3>
+                    <p class="text-muted small mb-0">Securely verify item ownership before sharing private contact details.</p>
+                </div>
+                <a href="/" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Back to Explore
+                </a>
+            </div>
+
+            {% if chat_list %}
+            <div class="list-group list-group-flush">
+                {% for chat in chat_list %}
+                <a href="/chat/{{ chat.conversation.id }}/" class="list-group-item list-group-item-action p-3 rounded-3 mb-2 border {% if chat.unread_count > 0 %}bg-primary-subtle border-primary-subtle{% endif %}">
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- Item Thumbnail -->
+                        {% if chat.conversation.item.image %}
+                        <img src="{{ chat.conversation.item.image.url }}" class="rounded-3 shadow-sm flex-shrink-0" style="width: 64px; height: 64px; object-fit: cover;">
+                        {% else %}
+                        <div class="bg-light rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 64px; height: 64px;">
+                            <i class="bi bi-image text-muted fs-4"></i>
+                        </div>
+                        {% endif %}
+
+                        <!-- Chat Details -->
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="fw-bold text-dark mb-0 text-truncate">
+                                    {{ chat.conversation.item.title }}
+                                </h6>
+                                <small class="text-muted flex-shrink-0 ms-2">
+                                    {{ chat.conversation.updated_at|date:"d M, H:i" }}
+                                </small>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="badge {% if chat.conversation.item.item_type == 'lost' %}badge-lost{% else %}badge-found{% endif %} small">
+                                    {{ chat.conversation.item.item_type|title }}
+                                </span>
+                                <span class="text-muted small">
+                                    Chat with <strong>@{{ chat.other_user.username }}</strong>
+                                    {% if chat.is_owner %}
+                                    <span class="badge bg-light text-dark border ms-1">You are Owner</span>
+                                    {% endif %}
+                                </span>
+
+                                {% if chat.conversation.contact_shared %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle ms-auto">
+                                    <i class="bi bi-unlock-fill"></i> Contact Unlocked
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <p class="text-muted small mb-0 text-truncate">
+                                {% if chat.last_message %}
+                                    <strong>{{ chat.last_message.sender.username }}:</strong> {{ chat.last_message.text }}
+                                {% else %}
+                                    <em>No messages sent yet. Click to say hello!</em>
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <!-- Unread Badge -->
+                        {% if chat.unread_count > 0 %}
+                        <span class="badge rounded-pill bg-danger px-2 py-1 shadow-sm flex-shrink-0">
+                            {{ chat.unread_count }} new
+                        </span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-chat-square-text text-muted" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold mt-3">No Conversations Yet</h5>
+                <p class="text-muted small">When you chat about lost or found items, conversations will appear here.</p>
+                <a href="/" class="btn btn-primary btn-sm px-3 mt-1">Explore Items on Map</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

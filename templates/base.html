@@ -148,6 +148,15 @@
                         {% endif %}
                     </a>
 
+                    <a href="/inbox/" class="btn btn-primary nav-btn position-relative d-flex align-items-center gap-1 shadow-sm">
+                        <i class="bi bi-chat-dots-fill"></i> Messages
+                        {% if chat_unread_count > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light">
+                            {{ chat_unread_count }}
+                        </span>
+                        {% endif %}
+                    </a>
+
                     <span class="text-white-50 px-2 small d-none d-lg-inline">|</span>
                     <span class="text-white fw-semibold small">
                         <i class="bi bi-person-circle"></i> {{ user.username }}

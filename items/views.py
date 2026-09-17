@@ -1,16 +1,38 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.db.models import Q
 import json
 
 from lostfound import settings
-from .models import Item, Profile, Claim
+from .models import Item, Profile, Claim, Conversation, ChatMessage
 from django.contrib.auth.decorators import login_required
 import random
 from django.core.mail import send_mail
 from .forms import RegisterForm
 from django.contrib.auth.models import User
 from django.contrib.auth import login
-from django.shortcuts import get_object_or_404
+
+
+def mask_phone_number(phone):
+    if not phone:
+        return ''
+    phone = str(phone).strip()
+    if len(phone) >= 10:
+        return phone[:2] + '*' * (len(phone) - 4) + phone[-2:]
+    return phone[:1] + '*' * (len(phone) - 2) + phone[-1:]
+
+
+def mask_email_address(email):
+    if not email or '@' not in email:
+        return '***@hidden.com'
+    parts = email.split('@', 1)
+    username = parts[0]
+    domain = parts[1]
+    if len(username) <= 2:
+        masked_user = username[0] + '***'
+    else:
+        masked_user = username[0] + '*' * (len(username) - 2) + username[-1]
+    return f"{masked_user}@{domain}"
 
 
 def home(request):
@@ -123,8 +145,196 @@ def add_item(request):
     return render(request, 'add_item.html')
 
 def item_detail(request, id):
-    item = Item.objects.get(id=id)
-    return render(request, 'item_detail.html', {'item': item})
+    item = get_object_or_404(Item, id=id)
+
+    raw_phone = ''
+    if hasattr(item.user, 'profile') and item.user.profile.phone:
+        raw_phone = item.user.profile.phone
+    raw_email = item.user.email
+
+    can_view_contact = False
+    existing_chat_id = None
+
+    if request.user.is_authenticated:
+        if request.user == item.user:
+            can_view_contact = True
+        else:
+            # Check if this user was granted permission in conversation
+            chat = Conversation.objects.filter(item=item, starter=request.user).first()
+            if chat:
+                existing_chat_id = chat.id
+                if chat.contact_shared:
+                    can_view_contact = True
+
+            # Also check if claim was approved
+            if not can_view_contact and Claim.objects.filter(item=item, user=request.user, status='resolved').exists():
+                can_view_contact = True
+
+    masked_phone = mask_phone_number(raw_phone)
+    masked_email = mask_email_address(raw_email)
+
+    return render(request, 'item_detail.html', {
+        'item': item,
+        'can_view_contact': can_view_contact,
+        'raw_phone': raw_phone,
+        'raw_email': raw_email,
+        'masked_phone': masked_phone,
+        'masked_email': masked_email,
+        'existing_chat_id': existing_chat_id,
+    })
+
+
+@login_required
+def inbox(request):
+    conversations = Conversation.objects.filter(
+        Q(starter=request.user) | Q(receiver=request.user)
+    ).select_related('item', 'starter', 'receiver').prefetch_related('messages')
+
+    chat_list = []
+    for conv in conversations:
+        other_user = conv.receiver if conv.starter == request.user else conv.starter
+        last_msg = conv.messages.last()
+        unread_count = conv.messages.filter(is_read=False).exclude(sender=request.user).count()
+        chat_list.append({
+            'conversation': conv,
+            'other_user': other_user,
+            'last_message': last_msg,
+            'unread_count': unread_count,
+            'is_owner': (conv.receiver == request.user),
+        })
+
+    return render(request, 'inbox.html', {'chat_list': chat_list})
+
+
+@login_required
+def start_or_open_chat(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    if item.user == request.user:
+        first_chat = Conversation.objects.filter(item=item).first()
+        if first_chat:
+            return redirect('chat_room', chat_id=first_chat.id)
+        return redirect('inbox')
+
+    conversation, created = Conversation.objects.get_or_create(
+        item=item,
+        starter=request.user,
+        defaults={'receiver': item.user}
+    )
+    return redirect('chat_room', chat_id=conversation.id)
+
+
+@login_required
+def chat_room(request, chat_id):
+    conversation = get_object_or_404(Conversation, id=chat_id)
+
+    if request.user != conversation.starter and request.user != conversation.receiver:
+        return redirect('inbox')
+
+    conversation.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+
+    other_user = conversation.receiver if conversation.starter == request.user else conversation.starter
+    is_owner = (request.user == conversation.receiver)
+
+    owner_phone = ''
+    if hasattr(conversation.receiver, 'profile') and conversation.receiver.profile.phone:
+        owner_phone = conversation.receiver.profile.phone
+    owner_email = conversation.receiver.email
+
+    starter_phone = ''
+    if hasattr(conversation.starter, 'profile') and conversation.starter.profile.phone:
+        starter_phone = conversation.starter.profile.phone
+    starter_email = conversation.starter.email
+
+    messages = conversation.messages.all()
+
+    return render(request, 'chat_room.html', {
+        'conversation': conversation,
+        'other_user': other_user,
+        'is_owner': is_owner,
+        'messages': messages,
+        'owner_phone': owner_phone,
+        'owner_email': owner_email,
+        'starter_phone': starter_phone,
+        'starter_email': starter_email,
+    })
+
+
+@login_required
+def toggle_share_contact(request, chat_id):
+    conversation = get_object_or_404(Conversation, id=chat_id)
+    if request.user != conversation.receiver:
+        return redirect('chat_room', chat_id=chat_id)
+
+    conversation.contact_shared = not conversation.contact_shared
+    conversation.save()
+
+    if conversation.contact_shared:
+        announcement = f"🔓 {request.user.username} (Item Owner) has granted permission and shared their direct contact details with you!"
+    else:
+        announcement = f"🔒 {request.user.username} has revoked contact details access."
+
+    ChatMessage.objects.create(
+        conversation=conversation,
+        sender=request.user,
+        text=announcement
+    )
+
+    return redirect('chat_room', chat_id=chat_id)
+
+
+@login_required
+def api_send_message(request, chat_id):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+    conversation = get_object_or_404(Conversation, id=chat_id)
+    if request.user != conversation.starter and request.user != conversation.receiver:
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+
+    text = request.POST.get('text', '').strip()
+    if not text:
+        return JsonResponse({'status': 'error', 'message': 'Empty message'}, status=400)
+
+    msg = ChatMessage.objects.create(
+        conversation=conversation,
+        sender=request.user,
+        text=text
+    )
+    conversation.save()
+
+    return JsonResponse({
+        'status': 'success',
+        'message_id': msg.id,
+        'text': msg.text,
+        'sender': msg.sender.username,
+        'created_at': msg.created_at.strftime('%I:%M %p')
+    })
+
+
+@login_required
+def api_get_messages(request, chat_id):
+    conversation = get_object_or_404(Conversation, id=chat_id)
+    if request.user != conversation.starter and request.user != conversation.receiver:
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+
+    conversation.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+
+    messages_data = [
+        {
+            'id': m.id,
+            'text': m.text,
+            'sender': m.sender.username,
+            'is_me': (m.sender == request.user),
+            'created_at': m.created_at.strftime('%I:%M %p')
+        }
+        for m in conversation.messages.all()
+    ]
+
+    return JsonResponse({
+        'status': 'success',
+        'contact_shared': conversation.contact_shared,
+        'messages': messages_data
+    })
 
 
 

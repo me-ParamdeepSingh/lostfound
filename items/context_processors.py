@@ -17,3 +17,14 @@ def claim_notification(request):
         return {'claim_notify': count}
 
     return {'claim_notify': 0}
+
+
+def chat_notification(request):
+    if request.user.is_authenticated:
+        from .models import ChatMessage
+        count = ChatMessage.objects.filter(
+            conversation__in=request.user.started_conversations.all() | request.user.received_conversations.all(),
+            is_read=False
+        ).exclude(sender=request.user).count()
+        return {'chat_unread_count': count}
+    return {'chat_unread_count': 0}

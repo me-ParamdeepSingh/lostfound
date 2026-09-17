@@ -44,3 +44,33 @@ class Claim(models.Model):
 
     def __str__(self):
         return f"{self.user.username} -> {self.item.title}"
+
+
+class Conversation(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='conversations')
+    starter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='started_conversations')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_conversations')
+    contact_shared = models.BooleanField(default=False)  # Owner sets this to True to reveal unmasked contact
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('item', 'starter')
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"Chat: {self.starter.username} & {self.receiver.username} ({self.item.title})"
+
+
+class ChatMessage(models.Model):
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.sender.username}: {self.text[:30]}"
