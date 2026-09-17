@@ -1,10 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.db.models import Q
+from django.utils import timezone
 import json
+import uuid
+import qrcode
+import io
+import base64
+from rapidfuzz import fuzz
 
 from lostfound import settings
-from .models import Item, Profile, Claim, Conversation, ChatMessage
+from .models import Item, Profile, Claim, Conversation, ChatMessage, SmartTag
 from django.contrib.auth.decorators import login_required
 import random
 from django.core.mail import send_mail
@@ -131,14 +137,13 @@ def add_item(request):
             longitude=longitude
         )
         
-        if item.item_type == 'lost':
-            matches = find_matches(item)
-
-            if matches.exists():
-                return render(request, 'match_results.html', {
-                    'matches': matches,
-                    'item': item
-                })
+        # AI Semantic Match Detection for newly posted item
+        ai_matches = find_ai_matches(item, limit=6)
+        if ai_matches:
+            return render(request, 'match_results.html', {
+                'matches': ai_matches,
+                'item': item
+            })
         
         return redirect('home')
 
@@ -173,6 +178,9 @@ def item_detail(request, id):
     masked_phone = mask_phone_number(raw_phone)
     masked_email = mask_email_address(raw_email)
 
+    # Get AI Potential Matches for this item (opposite type)
+    ai_matches = find_ai_matches(item, limit=3)
+
     return render(request, 'item_detail.html', {
         'item': item,
         'can_view_contact': can_view_contact,
@@ -181,6 +189,7 @@ def item_detail(request, id):
         'masked_phone': masked_phone,
         'masked_email': masked_email,
         'existing_chat_id': existing_chat_id,
+        'ai_matches': ai_matches,
     })
 
 
@@ -543,19 +552,167 @@ def my_claims(request):
 
 
 
-def find_matches(item):
-    words = item.title.lower().split()
+def find_ai_matches(item, limit=6):
+    """
+    Intelligent AI matching engine:
+    - Matches opposite type: Lost <-> Found
+    - Compares text semantics (Title + Description) using Token Set Ratio & Partial Ratio
+    - Gives strong category weight and location proximity bonus
+    - Returns list of matched items sorted by match_score (0 - 100%)
+    """
+    target_type = 'found' if item.item_type == 'lost' else 'lost'
+    candidates = Item.objects.filter(item_type=target_type, status='active').exclude(id=item.id)
 
-    query = Q()
-    for word in words:
-        query |= Q(title__icontains=word)
+    matched_results = []
+    item_full_text = f"{item.title} {item.description}".lower()
 
-    matches = Item.objects.filter(
-        item_type='found',
-        category=item.category
-    ).filter(query)
+    for candidate in candidates:
+        cand_full_text = f"{candidate.title} {candidate.description}".lower()
 
-    # optional: location filter
-    matches = matches.filter(location__icontains=item.location)
+        # Text similarity using RapidFuzz
+        title_sim = fuzz.token_set_ratio(item.title.lower(), candidate.title.lower())
+        desc_sim = fuzz.token_set_ratio(item_full_text, cand_full_text)
+        text_score = (title_sim * 0.6) + (desc_sim * 0.4)
 
-    return matches[:5]  # top 5 matches
+        # Category bonus (up to 20 pts)
+        category_bonus = 20 if item.category.lower() == candidate.category.lower() else 0
+
+        # Location similarity bonus (up to 15 pts)
+        loc_sim = fuzz.partial_ratio(item.location.lower(), candidate.location.lower()) if (item.location and candidate.location) else 0
+        location_bonus = (loc_sim / 100.0) * 15
+
+        final_score = min(100, int((text_score * 0.65) + category_bonus + location_bonus))
+
+        # Only consider meaningful matches (>= 45% score)
+        if final_score >= 45:
+            candidate.match_score = final_score
+            matched_results.append(candidate)
+
+    matched_results.sort(key=lambda x: x.match_score, reverse=True)
+    return matched_results[:limit]
+
+
+def generate_qr_base64(data_url):
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=10,
+        border=2,
+    )
+    qr.add_data(data_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#0f172a", back_color="#ffffff")
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+
+@login_required
+def my_smart_tags(request):
+    tags = SmartTag.objects.filter(user=request.user)
+    tag_list = []
+    for tag in tags:
+        scan_url = request.build_absolute_uri(f"/scan/{tag.tag_code}/")
+        qr_b64 = generate_qr_base64(scan_url)
+        tag_list.append({
+            'tag': tag,
+            'scan_url': scan_url,
+            'qr_b64': qr_b64,
+        })
+    return render(request, 'smart_tags.html', {'tag_list': tag_list})
+
+
+@login_required
+def create_smart_tag(request):
+    if request.method == 'POST':
+        item_name = request.POST.get('item_name', '').strip()
+        category = request.POST.get('category', '').strip()
+        reward_note = request.POST.get('reward_note', '').strip()
+        if item_name and category:
+            SmartTag.objects.create(
+                user=request.user,
+                item_name=item_name,
+                category=category,
+                reward_note=reward_note
+            )
+    return redirect('my_smart_tags')
+
+
+@login_required
+def delete_smart_tag(request, tag_code):
+    tag = get_object_or_404(SmartTag, tag_code=tag_code, user=request.user)
+    tag.delete()
+    return redirect('my_smart_tags')
+
+
+@login_required
+def print_smart_tag(request, tag_code):
+    tag = get_object_or_404(SmartTag, tag_code=tag_code, user=request.user)
+    scan_url = request.build_absolute_uri(f"/scan/{tag.tag_code}/")
+    qr_b64 = generate_qr_base64(scan_url)
+    return render(request, 'print_tag_card.html', {
+        'tag': tag,
+        'scan_url': scan_url,
+        'qr_b64': qr_b64
+    })
+
+
+def scan_smart_tag(request, tag_code):
+    tag = get_object_or_404(SmartTag, tag_code=tag_code)
+
+    # Increment scan count on GET
+    if request.method == 'GET':
+        tag.scans_count += 1
+        tag.last_scanned_at = timezone.now()
+        tag.save()
+
+    success_message = None
+
+    if request.method == 'POST':
+        finder_name = request.POST.get('finder_name', 'A Good Samaritan').strip()
+        finder_phone = request.POST.get('finder_phone', '').strip()
+        message_note = request.POST.get('message_note', '').strip()
+        location_text = request.POST.get('location_text', '').strip()
+        latitude = request.POST.get('latitude', '').strip()
+        longitude = request.POST.get('longitude', '').strip()
+
+        maps_link = ""
+        if latitude and longitude:
+            maps_link = f"https://www.google.com/maps/search/?api=1&query={latitude},{longitude}"
+
+        email_content = f"""
+        🚨 ALERT: Someone scanned your Smart QR Tag for '{tag.item_name}'!
+
+        Finder Details:
+        - Name: {finder_name}
+        - Phone: {finder_phone or 'Not provided'}
+
+        Message:
+        "{message_note or 'I have found your item. Please reach out to recover it.'}"
+
+        Location: {location_text or 'Location shared by finder'}
+        {f'Google Maps Pin: {maps_link}' if maps_link else ''}
+
+        Scanned At: {timezone.now().strftime('%d %b %Y, %I:%M %p')}
+
+        Thanks,
+        Lost & Found Smart Tag System
+        """
+
+        send_mail(
+            f"🚨 Smart Tag Scanned: {tag.item_name}",
+            email_content,
+            settings.DEFAULT_FROM_EMAIL,
+            [tag.user.email],
+            fail_silently=True,
+        )
+
+        success_message = "Thank you! An instant notification has been dispatched to the owner with your message and location."
+
+    masked_owner_email = mask_email_address(tag.user.email)
+
+    return render(request, 'scan_portal.html', {
+        'tag': tag,
+        'masked_owner_email': masked_owner_email,
+        'success_message': success_message
+    })

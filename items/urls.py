@@ -23,4 +23,11 @@ urlpatterns = [
     path('chat/<int:chat_id>/share-contact/', views.toggle_share_contact, name='toggle_share_contact'),
     path('chat/<int:chat_id>/send/', views.api_send_message, name='api_send_message'),
     path('chat/<int:chat_id>/messages/', views.api_get_messages, name='api_get_messages'),
+
+    # Smart QR Tags (Phase 4)
+    path('smart-tags/', views.my_smart_tags, name='my_smart_tags'),
+    path('smart-tags/create/', views.create_smart_tag, name='create_smart_tag'),
+    path('smart-tags/<uuid:tag_code>/delete/', views.delete_smart_tag, name='delete_smart_tag'),
+    path('smart-tags/<uuid:tag_code>/print/', views.print_smart_tag, name='print_smart_tag'),
+    path('scan/<uuid:tag_code>/', views.scan_smart_tag, name='scan_smart_tag'),
 ]

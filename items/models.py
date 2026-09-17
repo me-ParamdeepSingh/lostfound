@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+import uuid
 
 # Create your models here.
 
@@ -74,3 +75,20 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"{self.sender.username}: {self.text[:30]}"
+
+
+class SmartTag(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='smart_tags')
+    item_name = models.CharField(max_length=200)
+    category = models.CharField(max_length=100)
+    reward_note = models.CharField(max_length=255, blank=True, null=True)
+    tag_code = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    scans_count = models.IntegerField(default=0)
+    last_scanned_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.item_name} (Tag: {self.tag_code})"

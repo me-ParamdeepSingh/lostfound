@@ -174,6 +174,82 @@
                 </div>
             </div>
         </div>
+
+        {% if ai_matches %}
+        <!-- AI Potential Matches Section -->
+        <div class="mt-5">
+            <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: 16px;">
+                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                    <div>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill small fw-bold mb-1">
+                            <i class="bi bi-robot"></i> AI Engine
+                        </span>
+                        <h4 class="fw-bold text-dark mb-0">
+                            🤖 AI Potential Matches for this Item
+                        </h4>
+                        <small class="text-muted">Ranked by token semantic matching, category relevance, and location proximity</small>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    {% for match in ai_matches %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border shadow-none position-relative overflow-hidden" 
+                             onclick="window.location.href='/item/{{ match.id }}/'"
+                             style="cursor: pointer; border-radius: 12px; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+                            
+                            <!-- AI Confidence Badge -->
+                            <div class="position-absolute top-0 end-0 m-2 z-2">
+                                {% if match.match_score >= 80 %}
+                                <span class="badge bg-success shadow-sm px-2 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                    🔥 {{ match.match_score }}% Match
+                                </span>
+                                {% elif match.match_score >= 60 %}
+                                <span class="badge bg-primary shadow-sm px-2 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                    ✨ {{ match.match_score }}% Match
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark shadow-sm px-2 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                    ⚡ {{ match.match_score }}% Match
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="d-flex p-3 gap-3">
+                                <div style="width: 80px; height: 80px; min-width: 80px; border-radius: 8px; overflow: hidden; background: #f1f5f9;">
+                                    {% if match.image %}
+                                    <img src="{{ match.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="{{ match.title }}">
+                                    {% else %}
+                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                                        <i class="bi bi-image fs-3 opacity-50"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1 overflow-hidden d-flex flex-column justify-content-between">
+                                    <div>
+                                        <span class="badge {% if match.item_type == 'lost' %}badge-lost{% else %}badge-found{% endif %} text-uppercase px-2 py-0.5" style="font-size: 0.65rem;">
+                                            {{ match.item_type }}
+                                        </span>
+                                        <h6 class="fw-bold text-dark text-truncate mt-1 mb-0" title="{{ match.title }}">{{ match.title }}</h6>
+                                        <small class="text-muted text-truncate d-block" title="{{ match.location }}">
+                                            <i class="bi bi-geo-alt-fill text-danger"></i> {{ match.location|default:"Location not specified" }}
+                                        </small>
+                                    </div>
+                                    <div class="mt-2">
+                                        <a href="/item/{{ match.id }}/" class="btn btn-sm btn-outline-primary py-0.5 px-2 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                            View Match &rarr;
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 </div>
 
