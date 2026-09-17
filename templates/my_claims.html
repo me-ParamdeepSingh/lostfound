@@ -1,43 +1,90 @@
 {% extends 'base.html' %}
 
+{% block title %}My Filed Claims | Lost &amp; Found{% endblock %}
+
 {% block content %}
 
-<h2 class="mb-4">My Claims</h2>
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card border-0 shadow-sm p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">
+                        <i class="bi bi-collection-fill text-primary me-2"></i>My Filed Claims
+                    </h3>
+                    <p class="text-muted small mb-0">Track the status of claims you have submitted for found items.</p>
+                </div>
+                <a href="/" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Back to Explore
+                </a>
+            </div>
 
-{% for claim in claims %}
-<div class="card p-3 mb-3 shadow">
-    
-    <div class="row">
-        <div class="col-md-3">
-            <img src="{{ claim.item.image.url }}" class="img-fluid rounded">
-        </div>
+            {% if claims %}
+            <div class="d-flex flex-column gap-3">
+                {% for claim in claims %}
+                <div class="card border p-3 rounded-3 shadow-sm bg-white">
+                    <div class="row g-3 align-items-center">
+                        <!-- Thumbnail -->
+                        <div class="col-md-3 text-center">
+                            {% if claim.item.image %}
+                            <img src="{{ claim.item.image.url }}" class="img-fluid rounded-3 shadow-sm" style="max-height: 120px; object-fit: cover;" alt="{{ claim.item.title }}">
+                            {% else %}
+                            <div class="bg-light rounded-3 d-flex align-items-center justify-content-center py-4">
+                                <i class="bi bi-image text-muted fs-2"></i>
+                            </div>
+                            {% endif %}
+                        </div>
 
-        <div class="col-md-9">
-            <h5>{{ claim.item.title }}</h5>
+                        <!-- Details -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h5 class="fw-bold text-dark mb-0">{{ claim.item.title }}</h5>
+                            </div>
+                            <small class="text-muted d-block mb-2">
+                                <i class="bi bi-geo-alt text-danger"></i> {{ claim.item.location }} &bull; Claimed on {{ claim.created_at|date:"d M Y" }}
+                            </small>
 
-            <p><strong>📍 Location:</strong> {{ claim.item.location }}</p>
+                            <div class="p-2 bg-light rounded border small text-secondary mb-2">
+                                <strong>Your message:</strong> "{{ claim.message }}"
+                            </div>
 
-            <p><strong>Your Message:</strong> {{ claim.message }}</p>
+                            <div>
+                                <span class="badge 
+                                    {% if claim.status == 'resolved' %}bg-success
+                                    {% elif claim.status == 'rejected' %}bg-danger
+                                    {% else %}bg-warning text-dark
+                                    {% endif %} px-3 py-1 rounded-pill">
+                                    {% if claim.status == 'resolved' %}✅ Approved / Returned
+                                    {% elif claim.status == 'rejected' %}❌ Rejected by Owner
+                                    {% else %}⏳ Pending Review
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
 
-            <p>
-                <strong>Status:</strong> 
-                <span class="badge 
-                    {% if claim.status == 'pending' %}bg-warning
-                    {% elif claim.status == 'approved' %}bg-success
-                    {% else %}bg-danger
-                    {% endif %}">
-                    {{ claim.status|title }}
-                </span>
-            </p>
-
-            <a href="/item/{{ claim.item.id }}/" class="btn btn-primary btn-sm">View Item</a>
+                        <!-- Action Buttons -->
+                        <div class="col-md-3 d-flex flex-column gap-2 justify-content-center">
+                            <a href="/item/{{ claim.item.id }}/" class="btn btn-outline-primary btn-sm fw-semibold">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> View Item
+                            </a>
+                            <a href="/chat/start/{{ claim.item.id }}/" class="btn btn-primary btn-sm fw-semibold shadow-sm">
+                                <i class="bi bi-chat-dots-fill me-1"></i> Chat with Finder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-folder-x text-muted" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold mt-3">No Claims Filed Yet</h5>
+                <p class="text-muted small">You haven't claimed any found items yet.</p>
+                <a href="/" class="btn btn-primary btn-sm mt-2">Browse Found Items</a>
+            </div>
+            {% endif %}
         </div>
     </div>
-
 </div>
-
-{% empty %}
-<p>No claims yet 😢</p>
-{% endfor %}
 
 {% endblock %}
