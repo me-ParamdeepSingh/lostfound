@@ -48,7 +48,7 @@ def home(request):
     category = request.GET.get('category', '').strip()
     sort_by = request.GET.get('sort', 'newest').strip()
 
-    items = Item.objects.filter(status="active")
+    items = Item.objects.filter(status="active").select_related('user')
 
     if query:
         items = items.filter(
@@ -171,7 +171,7 @@ def add_item(request):
     return render(request, 'add_item.html')
 
 def item_detail(request, id):
-    item = get_object_or_404(Item, id=id)
+    item = get_object_or_404(Item.objects.select_related('user', 'user__profile'), id=id)
 
     raw_phone = ''
     if hasattr(item.user, 'profile') and item.user.profile.phone:
@@ -218,7 +218,7 @@ def item_detail(request, id):
 def inbox(request):
     conversations = Conversation.objects.filter(
         Q(starter=request.user) | Q(receiver=request.user)
-    ).select_related('item', 'starter', 'receiver').prefetch_related('messages')
+    ).select_related('item', 'starter', 'receiver').prefetch_related('messages', 'messages__sender')
 
     chat_list = []
     for conv in conversations:
@@ -508,9 +508,7 @@ def claim_item(request, id):
 
 @login_required
 def view_claims(request):
-    items = Item.objects.filter(user=request.user)
-    claims = Claim.objects.filter(item__in=items)
-
+    claims = Claim.objects.filter(item__user=request.user).select_related('item', 'user').order_by('-created_at')
     return render(request, 'view_claims.html', {'claims': claims})
 
 
@@ -586,10 +584,10 @@ def reject_claim(request, id):
 
 @login_required
 def my_claims(request):
-    claims = Claim.objects.filter(user=request.user).order_by('-created_at')
+    claims = Claim.objects.filter(user=request.user).select_related('item', 'item__user').order_by('-created_at')
 
-    # 👇 sabko seen mark kar do
-    claims.update(is_seen=True)
+    # Mark seen
+    Claim.objects.filter(user=request.user, is_seen=False).update(is_seen=True)
 
     return render(request, 'my_claims.html', {'claims': claims})
 
