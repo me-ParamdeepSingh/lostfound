@@ -27,32 +27,79 @@
 
     <!-- Filter Form -->
     <form method="GET" class="row g-2 align-items-center">
-        <div class="col-md-6">
+        <!-- Keyword Search -->
+        <div class="col-lg-3 col-md-6">
             <div class="input-group">
                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search by item name, keyword..." class="form-control border-start-0 ps-0">
+                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search title, description, location..." class="form-control border-start-0 ps-0">
             </div>
         </div>
 
-        <div class="col-md-3">
+        <!-- Lost / Found Type -->
+        <div class="col-lg-2 col-md-6">
             <select name="type" class="form-select">
-                <option value="">All Categories (Lost &amp; Found)</option>
+                <option value="">All Types (Lost &amp; Found)</option>
                 <option value="lost" {% if request.GET.type == 'lost' %}selected{% endif %}>🔴 Lost Items Only</option>
                 <option value="found" {% if request.GET.type == 'found' %}selected{% endif %}>🟢 Found Items Only</option>
             </select>
         </div>
 
-        <div class="col-md-3 d-flex gap-2">
-            <button class="btn btn-primary w-100 fw-semibold" type="submit">
-                <i class="bi bi-funnel-fill me-1"></i> Apply Filter
+        <!-- Category Dropdown -->
+        <div class="col-lg-3 col-md-6">
+            <select name="category" class="form-select">
+                <option value="">All Categories</option>
+                <option value="Electronics" {% if request.GET.category == 'Electronics' %}selected{% endif %}>📱 Electronics / Gadgets</option>
+                <option value="Wallets & Cards" {% if request.GET.category == 'Wallets & Cards' or request.GET.category == 'Wallets' %}selected{% endif %}>💳 Wallets &amp; Cards</option>
+                <option value="Keys" {% if request.GET.category == 'Keys' %}selected{% endif %}>🔑 Keys / Keychains</option>
+                <option value="Documents & IDs" {% if request.GET.category == 'Documents & IDs' or request.GET.category == 'Documents' %}selected{% endif %}>📄 Documents &amp; IDs</option>
+                <option value="Bags & Luggage" {% if request.GET.category == 'Bags & Luggage' or request.GET.category == 'Bags' %}selected{% endif %}>🎒 Bags &amp; Luggage</option>
+                <option value="Clothing & Accessories" {% if request.GET.category == 'Clothing & Accessories' or request.GET.category == 'Clothes' %}selected{% endif %}>👕 Clothing &amp; Accessories</option>
+                <option value="Books & Stationery" {% if request.GET.category == 'Books & Stationery' or request.GET.category == 'Books' %}selected{% endif %}>📚 Books &amp; Stationery</option>
+                <option value="Other" {% if request.GET.category == 'Other' %}selected{% endif %}>📦 Other</option>
+            </select>
+        </div>
+
+        <!-- Sort Dropdown -->
+        <div class="col-lg-2 col-md-6">
+            <select name="sort" class="form-select">
+                <option value="newest" {% if not request.GET.sort or request.GET.sort == 'newest' %}selected{% endif %}>⏱️ Newest First</option>
+                <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>⏳ Oldest First</option>
+                <option value="date_desc" {% if request.GET.sort == 'date_desc' %}selected{% endif %}>📅 Incident Date (Latest)</option>
+                <option value="date_asc" {% if request.GET.sort == 'date_asc' %}selected{% endif %}>📅 Incident Date (Earliest)</option>
+            </select>
+        </div>
+
+        <!-- Submit & Reset Actions -->
+        <div class="col-lg-2 col-md-12 d-flex gap-2">
+            <button class="btn btn-primary w-100 fw-semibold shadow-sm" type="submit">
+                <i class="bi bi-funnel-fill me-1"></i> Filter
             </button>
-            {% if request.GET.q or request.GET.type %}
-            <a href="/" class="btn btn-outline-secondary" title="Clear filters">
+            {% if request.GET.q or request.GET.type or request.GET.category or request.GET.sort and request.GET.sort != 'newest' %}
+            <a href="/" class="btn btn-outline-secondary" title="Clear all filters">
                 <i class="bi bi-x-circle"></i>
             </a>
             {% endif %}
         </div>
     </form>
+
+    {% if request.GET.q or request.GET.type or request.GET.category or request.GET.sort and request.GET.sort != 'newest' %}
+    <div class="d-flex align-items-center gap-2 mt-3 pt-2 border-top flex-wrap">
+        <small class="text-muted fw-bold"><i class="bi bi-funnel"></i> Active Filters:</small>
+        {% if request.GET.q %}
+        <span class="badge bg-light text-dark border">Search: "{{ request.GET.q }}"</span>
+        {% endif %}
+        {% if request.GET.type %}
+        <span class="badge {% if request.GET.type == 'lost' %}bg-danger{% else %}bg-success{% endif %} text-white text-uppercase">{{ request.GET.type }}</span>
+        {% endif %}
+        {% if request.GET.category %}
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ request.GET.category }}</span>
+        {% endif %}
+        {% if request.GET.sort and request.GET.sort != 'newest' %}
+        <span class="badge bg-secondary-subtle text-secondary border">Sorted: {{ request.GET.sort }}</span>
+        {% endif %}
+        <a href="/" class="text-danger small fw-semibold text-decoration-none ms-1">&times; Clear All</a>
+    </div>
+    {% endif %}
 </div>
 
 <!-- MAP VIEW CONTAINER -->

@@ -43,16 +43,34 @@ def mask_email_address(email):
 
 
 def home(request):
-    query = request.GET.get('q')
-    item_type = request.GET.get('type')
+    query = request.GET.get('q', '').strip()
+    item_type = request.GET.get('type', '').strip()
+    category = request.GET.get('category', '').strip()
+    sort_by = request.GET.get('sort', 'newest').strip()
 
-    items = Item.objects.filter(status="active").order_by('-created_at')
+    items = Item.objects.filter(status="active")
 
     if query:
-        items = items.filter(title__icontains=query)
+        items = items.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(location__icontains=query)
+        )
 
     if item_type:
         items = items.filter(item_type=item_type)
+
+    if category:
+        items = items.filter(category__iexact=category)
+
+    if sort_by == 'oldest':
+        items = items.order_by('created_at')
+    elif sort_by == 'date_desc':
+        items = items.order_by('-date')
+    elif sort_by == 'date_asc':
+        items = items.order_by('date')
+    else:
+        items = items.order_by('-created_at')
 
     items_map_data = [
         {
