@@ -245,6 +245,9 @@ def chat_room(request, chat_id):
         starter_phone = conversation.starter.profile.phone
     starter_email = conversation.starter.email
 
+    target_phone = starter_phone if is_owner else owner_phone
+    target_email = starter_email if is_owner else owner_email
+
     messages = conversation.messages.all()
 
     return render(request, 'chat_room.html', {
@@ -256,6 +259,8 @@ def chat_room(request, chat_id):
         'owner_email': owner_email,
         'starter_phone': starter_phone,
         'starter_email': starter_email,
+        'target_phone': target_phone,
+        'target_email': target_email,
     })
 
 
