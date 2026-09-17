@@ -1,42 +1,276 @@
 {% extends 'base.html' %}
 
+{% block title %}Explore Lost & Found Items | Interactive Map{% endblock %}
+
 {% block content %}
-<form method="GET" class="mb-4">
 
-    <input type="text" name="q" placeholder="Search..." class="form-control mb-2">
-
-    <select name="type" class="form-control mb-2">
-        <option value="">All</option>
-        <option value="lost">Lost</option>
-        <option value="found">Found</option>
-    </select>
-
-    <button class="btn btn-success">Filter</button>
-</form>
-
-<h2 class="mb-4">Lost & Found Items</h2>
-
-<div class="row">
-    {% for item in items %}
-    <div class="col-md-4">
-        <div class="card mb-4 shadow">
-            <img src="{{ item.image.url }}" class="card-img-top" style="height:200px; object-fit:cover;">
-
-            <div class="card-body">
-                <h5 class="card-title">{{ item.title }}</h5>
-
-                <span class="badge bg-{% if item.item_type == 'lost' %}danger{% else %}success{% endif %}">
-                    {{ item.item_type|title }}
-                </span>
-
-                <p class="mt-2">{{ item.description|truncatewords:10 }}</p>
-
-                <p><strong>📍 {{ item.location }}</strong></p>
-                <a href="/item/{{ item.id }}/" class="btn btn-primary">View Details</a>
+<!-- Header & Search Box -->
+<div class="card p-4 mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);">
+    <div class="row align-items-center mb-3">
+        <div class="col-md-7">
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="bi bi-compass text-primary me-2"></i>Community Lost &amp; Found
+            </h2>
+            <p class="text-muted mb-0">Search, filter, or explore nearby lost and found items on the live map.</p>
+        </div>
+        <div class="col-md-5 text-md-end mt-3 mt-md-0">
+            <div class="btn-group shadow-sm" role="group" aria-label="View switch">
+                <button type="button" class="btn btn-outline-primary active fw-semibold" id="btnGridView" onclick="switchView('grid')">
+                    <i class="bi bi-grid-fill me-1"></i> Grid View
+                </button>
+                <button type="button" class="btn btn-outline-primary fw-semibold" id="btnMapView" onclick="switchView('map')">
+                    <i class="bi bi-map-fill me-1"></i> Map View
+                </button>
             </div>
         </div>
     </div>
-    {% endfor %}
+
+    <!-- Filter Form -->
+    <form method="GET" class="row g-2 align-items-center">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search by item name, keyword..." class="form-control border-start-0 ps-0">
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <select name="type" class="form-select">
+                <option value="">All Categories (Lost &amp; Found)</option>
+                <option value="lost" {% if request.GET.type == 'lost' %}selected{% endif %}>🔴 Lost Items Only</option>
+                <option value="found" {% if request.GET.type == 'found' %}selected{% endif %}>🟢 Found Items Only</option>
+            </select>
+        </div>
+
+        <div class="col-md-3 d-flex gap-2">
+            <button class="btn btn-primary w-100 fw-semibold" type="submit">
+                <i class="bi bi-funnel-fill me-1"></i> Apply Filter
+            </button>
+            {% if request.GET.q or request.GET.type %}
+            <a href="/" class="btn btn-outline-secondary" title="Clear filters">
+                <i class="bi bi-x-circle"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
 </div>
 
+<!-- MAP VIEW CONTAINER -->
+<div id="mapViewContainer" class="d-none mb-4">
+    <div class="card border-0 shadow-sm p-3 mb-3 bg-white">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge badge-lost px-3 py-2 rounded-pill"><i class="bi bi-geo-alt-fill"></i> Lost Items (Red)</span>
+                <span class="badge badge-found px-3 py-2 rounded-pill"><i class="bi bi-geo-alt-fill"></i> Found Items (Green)</span>
+                <span class="text-muted small d-none d-md-inline">Click pins to inspect details</span>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-dark fw-semibold" onclick="locateUserOnMap()">
+                    <i class="bi bi-crosshair me-1"></i> Center My Location
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainMap" class="map-container" style="height: 540px; width: 100%;"></div>
+    <div id="noMapItemsAlert" class="alert alert-info mt-3 d-none">
+        <i class="bi bi-info-circle me-1"></i> None of the current filtered items have map coordinates yet. Add an item with coordinates to see it here!
+    </div>
+</div>
+
+<!-- GRID VIEW CONTAINER -->
+<div id="gridViewContainer">
+    {% if items %}
+    <div class="row g-4">
+        {% for item in items %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="position-relative">
+                    {% if item.image %}
+                    <img src="{{ item.image.url }}" class="card-img-top" style="height: 220px; object-fit: cover;" alt="{{ item.title }}">
+                    {% else %}
+                    <div class="bg-light d-flex align-items-center justify-content-center text-muted" style="height: 220px;">
+                        <i class="bi bi-image fs-1"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <span class="position-absolute top-0 end-0 m-3 badge {% if item.item_type == 'lost' %}badge-lost{% else %}badge-found{% endif %} px-3 py-2 rounded-pill shadow-sm">
+                        {% if item.item_type == 'lost' %}🔴 Lost{% else %}🟢 Found{% endif %}
+                    </span>
+                    
+                    {% if item.latitude and item.longitude %}
+                    <span class="position-absolute bottom-0 start-0 m-2 badge bg-dark bg-opacity-75 rounded-pill small">
+                        <i class="bi bi-geo-alt-fill text-warning"></i> On Map
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="card-body d-flex flex-direction-column flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title fw-bold text-dark mb-0">{{ item.title }}</h5>
+                    </div>
+
+                    <span class="badge bg-light text-secondary border mb-2 align-self-start">
+                        <i class="bi bi-tag-fill me-1"></i> {{ item.category }}
+                    </span>
+
+                    <p class="text-muted small flex-grow-1">{{ item.description|truncatewords:14 }}</p>
+
+                    <div class="border-top pt-2 mt-auto text-muted small d-flex flex-column gap-1">
+                        <div><i class="bi bi-geo-alt text-danger me-1"></i> <strong>Location:</strong> {{ item.location }}</div>
+                        <div><i class="bi bi-calendar3 text-primary me-1"></i> <strong>Date:</strong> {{ item.date }}</div>
+                    </div>
+
+                    <a href="/item/{{ item.id }}/" class="btn btn-outline-primary fw-semibold mt-3 w-100">
+                        View Details <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card border-0 p-5 text-center shadow-sm">
+        <i class="bi bi-search fs-1 text-muted mb-3"></i>
+        <h4 class="fw-bold">No Items Found</h4>
+        <p class="text-muted">No lost or found items match your current search criteria.</p>
+        <div class="mt-2">
+            <a href="/" class="btn btn-outline-primary">Reset Filters</a>
+            <a href="/add/" class="btn btn-success ms-2"><i class="bi bi-plus-circle"></i> Add New Item</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Map items passed safely from Django context
+    const mapItems = {{ items_json|safe }};
+    let mapInstance = null;
+    let markersLayer = null;
+
+    function switchView(viewMode) {
+        const gridBtn = document.getElementById('btnGridView');
+        const mapBtn = document.getElementById('btnMapView');
+        const gridContainer = document.getElementById('gridViewContainer');
+        const mapContainer = document.getElementById('mapViewContainer');
+
+        if (viewMode === 'map') {
+            gridBtn.classList.remove('active');
+            mapBtn.classList.add('active');
+            gridContainer.classList.add('d-none');
+            mapContainer.classList.remove('d-none');
+
+            // Initialize or invalidate map size
+            if (!mapInstance) {
+                initMainMap();
+            } else {
+                setTimeout(() => { mapInstance.invalidateSize(); }, 200);
+            }
+        } else {
+            mapBtn.classList.remove('active');
+            gridBtn.classList.add('active');
+            mapContainer.classList.add('d-none');
+            gridContainer.classList.remove('d-none');
+        }
+    }
+
+    function createMarkerIcon(isLost) {
+        const color = isLost ? '#ef4444' : '#10b981';
+        const iconSvg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="32" height="42">
+                <path fill="${color}" stroke="#ffffff" stroke-width="16" d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
+            </svg>
+        `;
+        return L.divIcon({
+            html: iconSvg,
+            className: 'custom-pin-icon',
+            iconSize: [32, 42],
+            iconAnchor: [16, 42],
+            popupAnchor: [0, -40]
+        });
+    }
+
+    function initMainMap() {
+        // Default center (e.g., India center / Delhi)
+        const defaultLat = 28.6139;
+        const defaultLng = 77.2090;
+
+        mapInstance = L.map('mainMap').setView([defaultLat, defaultLng], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(mapInstance);
+
+        markersLayer = L.featureGroup().addTo(mapInstance);
+
+        if (mapItems && mapItems.length > 0) {
+            mapItems.forEach(item => {
+                if (item.latitude && item.longitude) {
+                    const isLost = item.item_type === 'lost';
+                    const marker = L.marker([item.latitude, item.longitude], {
+                        icon: createMarkerIcon(isLost)
+                    });
+
+                    const popupContent = `
+                        <div style="width: 240px; font-family: inherit;">
+                            ${item.image_url ? `<img src="${item.image_url}" style="width:100%; height:130px; object-fit:cover; display:block;">` : ''}
+                            <div style="padding: 12px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+                                    <span style="font-size:11px; font-weight:700; text-transform:uppercase; padding: 2px 8px; border-radius: 12px; background:${isLost ? '#fee2e2' : '#d1fae5'}; color:${isLost ? '#dc2626' : '#059669'};">
+                                        ${isLost ? '🔴 Lost' : '🟢 Found'}
+                                    </span>
+                                    <span style="font-size:11px; color:#64748b;">${item.date}</span>
+                                </div>
+                                <h6 style="font-weight:700; margin:0 0 4px; color:#0f172a; font-size:14px;">${item.title}</h6>
+                                <p style="font-size:12px; color:#475569; margin:0 0 6px;"><i class="bi bi-geo-alt"></i> ${item.location}</p>
+                                <a href="/item/${item.id}/" class="btn btn-sm btn-primary w-100" style="font-size:12px; font-weight:600; border-radius:8px;">View Full Details</a>
+                            </div>
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupContent);
+                    markersLayer.addLayer(marker);
+                }
+            });
+
+            if (markersLayer.getLayers().length > 0) {
+                mapInstance.fitBounds(markersLayer.getBounds().pad(0.15));
+            } else {
+                document.getElementById('noMapItemsAlert').classList.remove('d-none');
+            }
+        } else {
+            document.getElementById('noMapItemsAlert').classList.remove('d-none');
+        }
+    }
+
+    function locateUserOnMap() {
+        if (navigator.geolocation && mapInstance) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const userLat = pos.coords.latitude;
+                    const userLng = pos.coords.longitude;
+                    mapInstance.setView([userLat, userLng], 14);
+
+                    const userMarker = L.circleMarker([userLat, userLng], {
+                        radius: 8,
+                        fillColor: '#3b82f6',
+                        color: '#ffffff',
+                        weight: 3,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    }).addTo(mapInstance);
+
+                    userMarker.bindPopup('<strong>📍 You are here</strong>').openPopup();
+                },
+                (err) => {
+                    alert('Could not detect location. Please allow browser location access.');
+                }
+            );
+        }
+    }
+</script>
 {% endblock %}

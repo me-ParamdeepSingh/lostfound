@@ -18,6 +18,8 @@ class Item(models.Model):
     image = models.ImageField(upload_to='items/')
     item_type = models.CharField(max_length=10, choices=ITEM_TYPE)
     status = models.CharField(max_length=10, default='active')
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -1,51 +1,249 @@
 {% extends 'base.html' %}
 
+{% block title %}Report Lost or Found Item | Lost & Found{% endblock %}
+
 {% block content %}
 
-<h2>Add Item</h2>
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm p-4 mb-4">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">
+                        <i class="bi bi-plus-circle text-primary me-2"></i>Report an Item
+                    </h3>
+                    <p class="text-muted small mb-0">Fill in details and drop a pin on the map so others can find or return it quickly.</p>
+                </div>
+                <a href="/" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Cancel
+                </a>
+            </div>
 
-<form method="POST" enctype="multipart/form-data" class="card p-4 shadow">
-    {% csrf_token %}
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
 
-    <div class="mb-3">
-        <label>Title</label>
-        <input type="text" name="title" class="form-control">
+                <!-- Hidden inputs for Coordinates -->
+                <input type="hidden" name="latitude" id="inputLatitude" value="">
+                <input type="hidden" name="longitude" id="inputLongitude" value="">
+
+                <div class="row g-4">
+                    <!-- Left Column: Item Details -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Item Status / Type <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check form-check-inline flex-fill border rounded p-2 ps-4 bg-light">
+                                    <input class="form-check-input" type="radio" name="item_type" id="typeLost" value="lost" checked>
+                                    <label class="form-check-label fw-bold text-danger" for="typeLost">
+                                        <i class="bi bi-exclamation-octagon-fill"></i> I Lost Something
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline flex-fill border rounded p-2 ps-4 bg-light">
+                                    <input class="form-check-input" type="radio" name="item_type" id="typeFound" value="found">
+                                    <label class="form-check-label fw-bold text-success" for="typeFound">
+                                        <i class="bi bi-check-circle-fill"></i> I Found Something
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Item Title <span class="text-danger">*</span></label>
+                            <input type="text" name="title" required class="form-control" placeholder="e.g., Black Dell Laptop / Fastrack Watch">
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                                <select name="category" required class="form-select">
+                                    <option value="">Select category...</option>
+                                    <option value="Electronics">📱 Electronics / Gadgets</option>
+                                    <option value="Wallets & Cards">💳 Wallets &amp; Cards</option>
+                                    <option value="Keys">🔑 Keys / Keychains</option>
+                                    <option value="Documents & IDs">📄 Documents &amp; IDs</option>
+                                    <option value="Bags & Luggage">🎒 Bags &amp; Luggage</option>
+                                    <option value="Clothing & Accessories">👕 Clothing &amp; Accessories</option>
+                                    <option value="Books & Stationery">📚 Books &amp; Stationery</option>
+                                    <option value="Other">📦 Other</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold">Date Lost/Found <span class="text-danger">*</span></label>
+                                <input type="date" name="date" required class="form-control" id="dateInput">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+                            <textarea name="description" required rows="3" class="form-control" placeholder="Describe color, brand, unique marks, stickers, condition..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Item Photo <span class="text-danger">*</span></label>
+                            <input type="file" name="image" required accept="image/*" class="form-control">
+                            <small class="text-muted">Clear photo helps others recognize the item faster.</small>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Interactive Map Picker -->
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-geo-alt-fill text-danger"></i> Pin Location on Map</span>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="getCurrentLocation()">
+                                    <i class="bi bi-crosshair"></i> Use Current Location
+                                </button>
+                            </label>
+                            <div class="input-group mb-2">
+                                <input type="text" name="location" id="locationInput" required class="form-control" placeholder="Click map or type area (e.g. Central Library, Cafeteria)">
+                                <button type="button" class="btn btn-outline-secondary" onclick="searchAddressOnMap()" title="Find on map">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Map Container -->
+                        <div id="pickerMap" class="map-container mb-2" style="height: 310px; width: 100%;"></div>
+                        <div class="d-flex justify-content-between align-items-center text-muted small">
+                            <span><i class="bi bi-cursor-fill text-primary"></i> Click anywhere on the map to set pin</span>
+                            <span id="coordsDisplay" class="fw-semibold text-secondary">No pin set yet</span>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="/" class="btn btn-light px-4">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+                        <i class="bi bi-check2-circle me-1"></i> Publish Post
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
+</div>
 
-    <div class="mb-3">
-        <label>Description</label>
-        <textarea name="description" class="form-control"></textarea>
-    </div>
+{% endblock %}
 
-    <div class="mb-3">
-        <label>Category</label>
-        <input type="text" name="category" class="form-control">
-    </div>
+{% block extra_scripts %}
+<script>
+    // Set today as default date
+    document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
 
-    <div class="mb-3">
-        <label>Location</label>
-        <input type="text" name="location" class="form-control">
-    </div>
+    let pickerMap;
+    let pickerMarker;
 
-    <div class="mb-3">
-        <label>Date</label>
-        <input type="date" name="date" class="form-control">
-    </div>
+    const defaultLat = 28.6139;
+    const defaultLng = 77.2090;
 
-    <div class="mb-3">
-        <label>Item Type</label>
-        <select name="item_type" class="form-control">
-            <option value="lost">Lost</option>
-            <option value="found">Found</option>
-        </select>
-    </div>
+    function initPickerMap() {
+        pickerMap = L.map('pickerMap').setView([defaultLat, defaultLng], 12);
 
-    <div class="mb-3">
-        <label>Image</label>
-        <input type="file" name="image" class="form-control">
-    </div>
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(pickerMap);
 
-    <button type="submit" class="btn btn-primary">Submit</button>
-</form>
+        // Click on map to place or move marker
+        pickerMap.on('click', function(e) {
+            setMarker(e.latlng.lat, e.latlng.lng, true);
+        });
 
+        // Try getting user's position initially
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    pickerMap.setView([lat, lng], 15);
+                    setMarker(lat, lng, true);
+                },
+                (err) => {
+                    // Keep default
+                },
+                { timeout: 5000 }
+            );
+        }
+    }
+
+    function setMarker(lat, lng, fetchAddress = false) {
+        document.getElementById('inputLatitude').value = lat.toFixed(6);
+        document.getElementById('inputLongitude').value = lng.toFixed(6);
+        document.getElementById('coordsDisplay').innerText = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+
+        if (pickerMarker) {
+            pickerMarker.setLatLng([lat, lng]);
+        } else {
+            pickerMarker = L.marker([lat, lng], { draggable: true }).addTo(pickerMap);
+            pickerMarker.on('dragend', function(event) {
+                const position = pickerMarker.getLatLng();
+                setMarker(position.lat, position.lng, true);
+            });
+        }
+
+        if (fetchAddress) {
+            reverseGeocode(lat, lng);
+        }
+    }
+
+    function reverseGeocode(lat, lng) {
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.display_name) {
+                    // Extract short readable place name
+                    const parts = data.display_name.split(',');
+                    const shortAddress = parts.slice(0, 3).join(',').trim();
+                    const locationInput = document.getElementById('locationInput');
+                    if (!locationInput.value || locationInput.dataset.autoFilled === "true" || locationInput.value.length === 0) {
+                        locationInput.value = shortAddress;
+                        locationInput.dataset.autoFilled = "true";
+                    }
+                }
+            })
+            .catch(() => {});
+    }
+
+    function searchAddressOnMap() {
+        const query = document.getElementById('locationInput').value;
+        if (!query) return;
+
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const lat = parseFloat(data[0].lat);
+                    const lng = parseFloat(data[0].lon);
+                    pickerMap.setView([lat, lng], 15);
+                    setMarker(lat, lng, false);
+                } else {
+                    alert('Location not found on map. You can click manually on the map to drop the pin.');
+                }
+            })
+            .catch(() => {
+                alert('Could not search location. Please click directly on the map.');
+            });
+    }
+
+    function getCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    pickerMap.setView([lat, lng], 16);
+                    setMarker(lat, lng, true);
+                },
+                (err) => {
+                    alert('Unable to retrieve location. Please allow browser location permission.');
+                }
+            );
+        } else {
+            alert('Geolocation is not supported by your browser.');
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', initPickerMap);
+</script>
 {% endblock %}

@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.db.models import Q
+import json
 
 from lostfound import settings
 from .models import Item, Profile, Claim
@@ -24,7 +25,27 @@ def home(request):
     if item_type:
         items = items.filter(item_type=item_type)
 
-    return render(request, 'home.html', {'items': items})
+    items_map_data = [
+        {
+            'id': item.id,
+            'title': item.title,
+            'description': item.description[:100] + ('...' if len(item.description) > 100 else ''),
+            'category': item.category,
+            'location': item.location,
+            'date': item.date.strftime('%d %b %Y') if item.date else '',
+            'item_type': item.item_type,
+            'status': item.status,
+            'image_url': item.image.url if item.image else '',
+            'latitude': item.latitude,
+            'longitude': item.longitude,
+        }
+        for item in items if item.latitude is not None and item.longitude is not None
+    ]
+
+    return render(request, 'home.html', {
+        'items': items,
+        'items_json': json.dumps(items_map_data)
+    })
 
 def register(request):
     if request.method == 'POST':
@@ -55,13 +76,25 @@ def register(request):
 @login_required         
 def add_item(request):
     if request.method == 'POST':
-        title = request.POST['title']
-        description = request.POST['description']
-        category = request.POST['category']
-        location = request.POST['location']
-        date = request.POST['date']
-        image = request.FILES['image']
-        item_type = request.POST['item_type']
+        title = request.POST.get('title', '')
+        description = request.POST.get('description', '')
+        category = request.POST.get('category', '')
+        location = request.POST.get('location', '')
+        date = request.POST.get('date', '')
+        image = request.FILES.get('image')
+        item_type = request.POST.get('item_type', 'lost')
+        
+        lat_val = request.POST.get('latitude')
+        lng_val = request.POST.get('longitude')
+        try:
+            latitude = float(lat_val) if lat_val and lat_val.strip() else None
+        except ValueError:
+            latitude = None
+            
+        try:
+            longitude = float(lng_val) if lng_val and lng_val.strip() else None
+        except ValueError:
+            longitude = None
 
         item = Item.objects.create(
             user=request.user,
@@ -71,7 +104,9 @@ def add_item(request):
             location=location,
             date=date,
             image=image,
-            item_type=item_type
+            item_type=item_type,
+            latitude=latitude,
+            longitude=longitude
         )
         
         if item.item_type == 'lost':
@@ -104,12 +139,24 @@ def edit_item(request, id):
     item = get_object_or_404(Item, id=id, user=request.user)
 
     if request.method == 'POST':
-        item.title = request.POST['title']
-        item.description = request.POST['description']
-        item.category = request.POST['category']
-        item.location = request.POST['location']
-        item.date = request.POST['date']
-        item.item_type = request.POST['item_type']
+        item.title = request.POST.get('title', item.title)
+        item.description = request.POST.get('description', item.description)
+        item.category = request.POST.get('category', item.category)
+        item.location = request.POST.get('location', item.location)
+        item.date = request.POST.get('date', item.date)
+        item.item_type = request.POST.get('item_type', item.item_type)
+
+        lat_val = request.POST.get('latitude')
+        lng_val = request.POST.get('longitude')
+        try:
+            item.latitude = float(lat_val) if lat_val and lat_val.strip() else None
+        except ValueError:
+            item.latitude = None
+            
+        try:
+            item.longitude = float(lng_val) if lng_val and lng_val.strip() else None
+        except ValueError:
+            item.longitude = None
 
         if request.FILES.get('image'):
             item.image = request.FILES['image']
