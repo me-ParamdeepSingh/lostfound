@@ -35,8 +35,8 @@ def send_portal_email(subject, message, recipient_list, html_message=None):
     if not valid_recipients:
         return False
 
-    api_key = os.environ.get('BREVO_API_KEY', '').strip() or os.environ.get('EMAIL_HOST_PASSWORD', '').strip()
-    from_email = os.environ.get('DEFAULT_FROM_EMAIL', 'lostfoundteam3@gmail.com').strip()
+    api_key = os.environ.get('BREVO_API_KEY', '').strip() or getattr(settings, 'BREVO_API_KEY', '').strip() or os.environ.get('EMAIL_HOST_PASSWORD', '').strip() or getattr(settings, 'EMAIL_HOST_PASSWORD', '').strip()
+    from_email = os.environ.get('DEFAULT_FROM_EMAIL', '').strip() or getattr(settings, 'DEFAULT_FROM_EMAIL', 'lostfoundteam3@gmail.com').strip()
 
     # If Brevo API key is available
     if api_key:

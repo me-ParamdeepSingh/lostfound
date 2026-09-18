@@ -212,11 +212,12 @@ CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
 
 # Email Settings (Brevo / Sendinblue or Gmail SMTP)
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '5fa94091f06d2489f8547e7d791ba0ceaf66b09b6d4cd17a81701486d2380e7a-5Ujblx90TgZkN6MP')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp-relay.brevo.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = True
 EMAIL_TIMEOUT = 10
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'noreply@lostfound-portal.com')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'b9e582001@smtp-brevo.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', BREVO_API_KEY)
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'lostfoundteam3@gmail.com')
