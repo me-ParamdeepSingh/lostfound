@@ -104,17 +104,18 @@ def register(request):
             request.session['otp'] = str(otp)
             request.session['user_data'] = form.cleaned_data
 
-            email_sent = True
+            email_sent = False
             try:
-                send_mail(
+                sent_count = send_mail(
                     'Your OTP Verification Code - Lost & Found Portal',
                     f'Hello {form.cleaned_data["username"]},\n\nYour 4-digit verification code is: {otp}\n\nPlease enter this on the portal to activate your account.\n\nThanks,\nLost & Found Community Team',
                     settings.DEFAULT_FROM_EMAIL,
                     [form.cleaned_data['email']],
-                    fail_silently=True,
+                    fail_silently=False,
                 )
+                email_sent = (sent_count > 0)
             except Exception as e:
-                print(f"[OTP Email Error]: {e}")
+                print(f"❌ [OTP Email Error]: {e}")
                 email_sent = False
 
             print(f"==================================================")
@@ -122,9 +123,9 @@ def register(request):
             print(f"==================================================")
 
             if email_sent:
-                messages.info(request, f'📨 A 4-digit OTP has been sent to {form.cleaned_data["email"]}.')
+                messages.success(request, f'📨 A 4-digit OTP has been sent to {form.cleaned_data["email"]}. Please check your inbox or spam folder.')
             else:
-                messages.warning(request, f'⚠️ Email service is temporarily slow. Please check your inbox or retry.')
+                messages.warning(request, f'⚠️ Email sending in progress. Please check your inbox/spam or retry.')
 
             return redirect('verify_otp')
         else:
