@@ -47,11 +47,17 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'cloudinary_storage',
     'django.contrib.staticfiles',
-    'cloudinary',
     'items',
 ]
+
+try:
+    import cloudinary
+    import cloudinary_storage
+    INSTALLED_APPS.insert(5, 'cloudinary_storage')
+    INSTALLED_APPS.append('cloudinary')
+except ImportError:
+    pass
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
