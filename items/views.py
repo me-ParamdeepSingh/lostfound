@@ -104,15 +104,30 @@ def register(request):
             request.session['otp'] = otp
             request.session['user_data'] = form.cleaned_data
 
-            send_mail(
-                'Your OTP Code',
-                f'Your OTP for Lost&Found is {otp}',
-                'your_email@gmail.com',
-                [form.cleaned_data['email']],
-                fail_silently=False,
-            )
+            email_sent = True
+            try:
+                send_mail(
+                    'Your OTP Verification Code - Lost & Found Portal',
+                    f'Hello {form.cleaned_data["username"]},\n\nYour 4-digit verification code is: {otp}\n\nPlease enter this on the portal to activate your account.\n\nThanks,\nLost & Found Community Team',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [form.cleaned_data['email']],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                print(f"[OTP Email Error]: {e}")
+                print(f"[FALLBACK LOG - OTP FOR {form.cleaned_data['email']} IS: {otp}]")
+                email_sent = False
+
+            if email_sent:
+                messages.info(request, f'📨 A 4-digit OTP has been dispatched to {form.cleaned_data["email"]}.')
+            else:
+                messages.warning(request, f'⚠️ Email service is temporarily slow. Please check OTP in server console or retry.')
 
             return redirect('verify_otp')
+        else:
+            for field, errors in form.errors.items():
+                for err in errors:
+                    messages.error(request, f"{err}")
 
     else:
         form = RegisterForm()
@@ -438,30 +453,41 @@ def toggle_item_status(request, id):
     return redirect('my_posts')
 
 def verify_otp(request):
+    session_otp = request.session.get('otp')
+    user_data = request.session.get('user_data')
+
+    if not session_otp or not user_data:
+        messages.warning(request, '⚠️ Verification session has expired. Please register again.')
+        return redirect('register')
+
     if request.method == 'POST':
-        user_otp = request.POST['otp']
-        session_otp = request.session.get('otp')
+        user_otp = request.POST.get('otp', '').strip()
 
         if str(user_otp) == str(session_otp):
-            data = request.session.get('user_data')
-
+            # Create user safely
             user = User.objects.create_user(
-                username=data['username'],
-                email=data['email'],
-                password=data['password']
+                username=user_data['username'],
+                email=user_data['email'],
+                password=user_data['password']
             )
 
-            # phone save
+            # Profile with phone
             Profile.objects.create(
                 user=user,
-                phone=data['phone']
+                phone=user_data['phone']
             )
 
-            login(request, user)
-            messages.success(request, f'🎉 Welcome, {user.username}! Your account has been verified.')
-            return redirect('home')
+            # Clear session
+            request.session.pop('otp', None)
+            request.session.pop('user_data', None)
 
-    return render(request, 'verify_otp.html')
+            login(request, user)
+            messages.success(request, f'🎉 Welcome, {user.username}! Your account has been verified successfully.')
+            return redirect('home')
+        else:
+            messages.error(request, '❌ Invalid OTP! Please enter the correct 4-digit code sent to your email.')
+
+    return render(request, 'verify_otp.html', {'email': user_data.get('email', '')})
 
 @login_required
 def claim_item(request, id):

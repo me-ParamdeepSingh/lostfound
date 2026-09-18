@@ -1,17 +1,44 @@
 {% extends 'base.html' %}
 
+{% block title %}Verify OTP | Lost &amp; Found{% endblock %}
+
 {% block content %}
 
-<div class="row justify-content-center">
-    <div class="col-md-4">
-        <div class="card p-4 shadow">
-            <h3 class="text-center">Verify OTP</h3>
+<div class="row justify-content-center my-4">
+    <div class="col-md-5 col-lg-4">
+        <div class="card border-0 shadow-sm p-4 p-md-5 bg-white text-center" style="border-radius: 20px;">
+            
+            <div class="d-inline-flex align-items-center justify-content-center mb-3 mx-auto" style="width: 64px; height: 64px; background: #ecfdf5; border-radius: 50%; border: 2px solid #a7f3d0;">
+                <i class="bi bi-shield-lock-fill text-success fs-2"></i>
+            </div>
+            
+            <h3 class="fw-extrabold text-dark mb-1">Verify Your Email</h3>
+            <p class="text-muted small mb-4">
+                We sent a 4-digit OTP to your registered email:
+                <br><strong class="text-dark">{{ email }}</strong>
+            </p>
 
             <form method="POST">
                 {% csrf_token %}
-                <input type="text" name="otp" class="form-control mb-3" placeholder="Enter OTP">
-                <button class="btn btn-success w-100">Verify</button>
+                <div class="mb-4">
+                    <input type="text" name="otp" maxlength="6" required autofocus
+                           class="form-control form-control-lg text-center fw-bold font-monospace" 
+                           placeholder="&bull; &bull; &bull; &bull;" 
+                           style="letter-spacing: 12px; font-size: 1.6rem; border-radius: 14px;">
+                    <small class="text-muted mt-2 d-block">Enter the 4-digit code to verify</small>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 py-2.5 rounded-pill fw-bold shadow-sm">
+                    <i class="bi bi-check2-circle me-1"></i> Verify &amp; Activate Account
+                </button>
             </form>
+
+            <div class="text-center mt-4 pt-3 border-top">
+                <a href="/register/" class="small text-muted text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Change email / Register again
+                </a>
+            </div>
+
         </div>
     </div>
 </div>
