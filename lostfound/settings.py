@@ -27,9 +27,16 @@ ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
+    'https://lostfound-portal-7guj.onrender.com',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
+
+# Render Cloud Proxy & SSL Settings
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
 
 
 # Application definition
@@ -164,10 +171,13 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-# Session & Security Settings
-SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+# Session & CSRF Cookie Settings (PostgreSQL DB backed)
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 86400  # 1 day
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'Lax'
 
 # Email Settings (Brevo / Sendinblue or Gmail SMTP)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
