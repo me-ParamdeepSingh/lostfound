@@ -28,51 +28,51 @@
     <!-- Filter Form -->
     <form method="GET" class="row g-2 align-items-center">
         <!-- Keyword Search -->
-        <div class="col-lg-3 col-md-6">
+        <div class="col-12 col-lg-3 col-md-6">
             <div class="input-group">
                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search title, description, location..." class="form-control border-start-0 ps-0">
+                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search items, tags, locations..." class="form-control border-start-0 ps-0">
             </div>
         </div>
 
         <!-- Lost / Found Type -->
-        <div class="col-lg-2 col-md-6">
+        <div class="col-6 col-lg-2 col-md-6">
             <select name="type" class="form-select">
-                <option value="">All Types (Lost &amp; Found)</option>
-                <option value="lost" {% if request.GET.type == 'lost' %}selected{% endif %}>🔴 Lost Items Only</option>
-                <option value="found" {% if request.GET.type == 'found' %}selected{% endif %}>🟢 Found Items Only</option>
+                <option value="">All (Lost &amp; Found)</option>
+                <option value="lost" {% if request.GET.type == 'lost' %}selected{% endif %}>🔴 Lost</option>
+                <option value="found" {% if request.GET.type == 'found' %}selected{% endif %}>🟢 Found</option>
             </select>
         </div>
 
         <!-- Category Dropdown -->
-        <div class="col-lg-3 col-md-6">
+        <div class="col-6 col-lg-3 col-md-6">
             <select name="category" class="form-select">
                 <option value="">All Categories</option>
-                <option value="Electronics" {% if request.GET.category == 'Electronics' %}selected{% endif %}>📱 Electronics / Gadgets</option>
-                <option value="Wallets & Cards" {% if request.GET.category == 'Wallets & Cards' or request.GET.category == 'Wallets' %}selected{% endif %}>💳 Wallets &amp; Cards</option>
-                <option value="Keys" {% if request.GET.category == 'Keys' %}selected{% endif %}>🔑 Keys / Keychains</option>
-                <option value="Documents & IDs" {% if request.GET.category == 'Documents & IDs' or request.GET.category == 'Documents' %}selected{% endif %}>📄 Documents &amp; IDs</option>
-                <option value="Bags & Luggage" {% if request.GET.category == 'Bags & Luggage' or request.GET.category == 'Bags' %}selected{% endif %}>🎒 Bags &amp; Luggage</option>
-                <option value="Clothing & Accessories" {% if request.GET.category == 'Clothing & Accessories' or request.GET.category == 'Clothes' %}selected{% endif %}>👕 Clothing &amp; Accessories</option>
-                <option value="Books & Stationery" {% if request.GET.category == 'Books & Stationery' or request.GET.category == 'Books' %}selected{% endif %}>📚 Books &amp; Stationery</option>
+                <option value="Electronics" {% if request.GET.category == 'Electronics' %}selected{% endif %}>📱 Electronics</option>
+                <option value="Wallets & Cards" {% if request.GET.category == 'Wallets & Cards' or request.GET.category == 'Wallets' %}selected{% endif %}>💳 Wallets/Cards</option>
+                <option value="Keys" {% if request.GET.category == 'Keys' %}selected{% endif %}>🔑 Keys</option>
+                <option value="Documents & IDs" {% if request.GET.category == 'Documents & IDs' or request.GET.category == 'Documents' %}selected{% endif %}>📄 Documents</option>
+                <option value="Bags & Luggage" {% if request.GET.category == 'Bags & Luggage' or request.GET.category == 'Bags' %}selected{% endif %}>🎒 Bags</option>
+                <option value="Clothing & Accessories" {% if request.GET.category == 'Clothing & Accessories' or request.GET.category == 'Clothes' %}selected{% endif %}>👕 Clothes</option>
+                <option value="Books & Stationery" {% if request.GET.category == 'Books & Stationery' or request.GET.category == 'Books' %}selected{% endif %}>📚 Books</option>
                 <option value="Other" {% if request.GET.category == 'Other' %}selected{% endif %}>📦 Other</option>
             </select>
         </div>
 
         <!-- Sort Dropdown -->
-        <div class="col-lg-2 col-md-6">
+        <div class="col-7 col-lg-2 col-md-6">
             <select name="sort" class="form-select">
-                <option value="newest" {% if not request.GET.sort or request.GET.sort == 'newest' %}selected{% endif %}>⏱️ Newest First</option>
-                <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>⏳ Oldest First</option>
-                <option value="date_desc" {% if request.GET.sort == 'date_desc' %}selected{% endif %}>📅 Incident Date (Latest)</option>
-                <option value="date_asc" {% if request.GET.sort == 'date_asc' %}selected{% endif %}>📅 Incident Date (Earliest)</option>
+                <option value="newest" {% if not request.GET.sort or request.GET.sort == 'newest' %}selected{% endif %}>⏱️ Newest</option>
+                <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>⏳ Oldest</option>
+                <option value="date_desc" {% if request.GET.sort == 'date_desc' %}selected{% endif %}>📅 Date (Latest)</option>
+                <option value="date_asc" {% if request.GET.sort == 'date_asc' %}selected{% endif %}>📅 Date (Earliest)</option>
             </select>
         </div>
 
         <!-- Submit & Reset Actions -->
-        <div class="col-lg-2 col-md-12 d-flex gap-2">
-            <button class="btn btn-primary w-100 fw-semibold shadow-sm" type="submit">
-                <i class="bi bi-funnel-fill me-1"></i> Filter
+        <div class="col-5 col-lg-2 col-md-6 d-flex gap-1">
+            <button class="btn btn-primary w-100 fw-semibold shadow-sm text-nowrap" type="submit">
+                <i class="bi bi-funnel-fill"></i> Filter
             </button>
             {% if request.GET.q or request.GET.type or request.GET.category or request.GET.sort and request.GET.sort != 'newest' %}
             <a href="/" class="btn btn-outline-secondary" title="Clear all filters">
@@ -128,61 +128,59 @@
 <!-- GRID VIEW CONTAINER -->
 <div id="gridViewContainer">
     {% if items %}
-    <div class="row g-4">
+    <div class="row g-2 g-md-3 g-lg-4">
         {% for item in items %}
-        <div class="col-md-6 col-lg-4">
+        <div class="col-6 col-md-4 col-lg-3">
             <div class="card h-100 border-0 shadow-sm item-card position-relative" style="cursor: pointer;" onclick="window.location.href='/item/{{ item.id }}/'">
-                <div class="position-relative">
+                <div class="item-card-img-wrapper">
                     {% if item.image %}
-                    <img src="{{ item.image.url }}" class="card-img-top" style="height: 220px; object-fit: cover;" alt="{{ item.title }}">
+                    <img src="{{ item.image.url }}" class="item-card-img" alt="{{ item.title }}">
                     {% else %}
-                    <div class="bg-light d-flex align-items-center justify-content-center text-muted" style="height: 220px;">
-                        <i class="bi bi-image fs-1"></i>
+                    <div class="d-flex align-items-center justify-content-center text-muted item-card-img bg-light">
+                        <i class="bi bi-image fs-1 opacity-50"></i>
                     </div>
                     {% endif %}
                     
-                    <span class="position-absolute top-0 end-0 m-3 badge {% if item.item_type == 'lost' %}badge-lost{% else %}badge-found{% endif %} px-3 py-2 rounded-pill shadow-sm">
+                    <span class="position-absolute top-0 end-0 m-2 badge {% if item.item_type == 'lost' %}badge-lost{% else %}badge-found{% endif %} px-2 py-1 rounded-pill shadow-sm badge-compact-mobile">
                         {% if item.item_type == 'lost' %}🔴 Lost{% else %}🟢 Found{% endif %}
                     </span>
                     
                     {% if item.latitude and item.longitude %}
-                    <span class="position-absolute bottom-0 start-0 m-2 badge bg-dark bg-opacity-75 rounded-pill small">
-                        <i class="bi bi-geo-alt-fill text-warning"></i> On Map
+                    <span class="position-absolute bottom-0 start-0 m-2 badge bg-dark bg-opacity-75 rounded-pill badge-compact-mobile">
+                        <i class="bi bi-geo-alt-fill text-warning"></i> Map
                     </span>
                     {% endif %}
                 </div>
 
-                <div class="card-body d-flex flex-direction-column flex-column">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h5 class="card-title fw-bold text-dark mb-0">{{ item.title }}</h5>
-                    </div>
+                <div class="item-card-body">
+                    <h5 class="item-card-title" title="{{ item.title }}">{{ item.title }}</h5>
 
-                    <span class="badge bg-light text-secondary border mb-2 align-self-start">
+                    <span class="badge bg-light text-secondary border mb-1 mb-md-2 align-self-start badge-compact-mobile">
                         <i class="bi bi-tag-fill me-1"></i> {{ item.category }}
                     </span>
 
-                    <p class="text-muted small flex-grow-1">{{ item.description|truncatewords:14 }}</p>
+                    <p class="item-card-desc flex-grow-1">{{ item.description }}</p>
 
-                    <div class="border-top pt-2 mt-auto text-muted small d-flex flex-column gap-1">
-                        <div><i class="bi bi-geo-alt text-danger me-1"></i> <strong>Location:</strong> {{ item.location }}</div>
-                        <div><i class="bi bi-calendar3 text-primary me-1"></i> <strong>Date:</strong> {{ item.date }}</div>
+                    <div class="border-top pt-2 mt-auto text-muted item-meta-mobile d-flex flex-column gap-1 mb-2">
+                        <div class="text-truncate" title="{{ item.location }}"><i class="bi bi-geo-alt text-danger me-1"></i> {{ item.location }}</div>
+                        <div><i class="bi bi-calendar3 text-primary me-1"></i> {{ item.date }}</div>
                     </div>
 
                     <!-- Context-Aware Action Button -->
                     {% if user.is_authenticated and user == item.user %}
-                    <a href="/edit/{{ item.id }}/" class="btn btn-outline-secondary btn-sm fw-semibold mt-3 w-100" onclick="event.stopPropagation();">
-                        <i class="bi bi-pencil-square me-1"></i> Manage My Post
+                    <a href="/edit/{{ item.id }}/" class="btn btn-outline-secondary btn-sm fw-semibold w-100 item-btn-mobile" onclick="event.stopPropagation();">
+                        <i class="bi bi-pencil-square me-1"></i> Manage
                     </a>
                     {% elif item.item_type == 'found' %}
-                    <a href="/claim/{{ item.id }}/" class="btn btn-warning fw-bold mt-3 w-100 shadow-sm" onclick="event.stopPropagation();">
-                        <i class="bi bi-hand-index-thumb-fill me-1"></i> Claim Item
+                    <a href="/claim/{{ item.id }}/" class="btn btn-warning fw-bold w-100 shadow-sm item-btn-mobile" onclick="event.stopPropagation();">
+                        <i class="bi bi-hand-index-thumb-fill me-1"></i> Claim
                     </a>
                     {% elif item.item_type == 'lost' %}
-                    <a href="{% if user.is_authenticated %}/chat/start/{{ item.id }}/{% else %}/accounts/login/?next=/item/{{ item.id }}/{% endif %}" class="btn btn-primary fw-semibold mt-3 w-100 shadow-sm" onclick="event.stopPropagation();">
-                        <i class="bi bi-chat-dots-fill me-1"></i> Found This? Chat with Owner
+                    <a href="{% if user.is_authenticated %}/chat/start/{{ item.id }}/{% else %}/accounts/login/?next=/item/{{ item.id }}/{% endif %}" class="btn btn-primary fw-semibold w-100 shadow-sm item-btn-mobile" onclick="event.stopPropagation();">
+                        <i class="bi bi-chat-dots-fill me-1"></i> Chat Owner
                     </a>
                     {% else %}
-                    <a href="/item/{{ item.id }}/" class="btn btn-outline-primary fw-semibold mt-3 w-100">
+                    <a href="/item/{{ item.id }}/" class="btn btn-outline-primary fw-semibold w-100 item-btn-mobile">
                         View Details <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                     {% endif %}

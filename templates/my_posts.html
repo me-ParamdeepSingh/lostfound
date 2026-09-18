@@ -20,76 +20,74 @@
     </div>
 
     {% if items %}
-    <div class="row g-4">
+    <div class="row g-2 g-md-3 g-lg-4">
         {% for item in items %}
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden" 
-                 style="cursor: pointer; border-radius: 16px; transition: transform 0.2s ease, box-shadow 0.2s ease;" 
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm item-card position-relative overflow-hidden" 
+                 style="cursor: pointer;" 
                  onclick="window.location.href='/item/{{ item.id }}/'">
                 
                 <!-- Image & Top Badges -->
-                <div class="position-relative">
+                <div class="item-card-img-wrapper">
                     {% if item.image %}
-                    <img src="{{ item.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ item.title }}">
+                    <img src="{{ item.image.url }}" class="item-card-img" alt="{{ item.title }}">
                     {% else %}
-                    <div class="bg-light d-flex align-items-center justify-content-center text-muted" style="height: 200px;">
+                    <div class="d-flex align-items-center justify-content-center text-muted item-card-img bg-light">
                         <i class="bi bi-image fs-1 opacity-50"></i>
                     </div>
                     {% endif %}
 
                     <!-- Left Type Badge -->
-                    <span class="position-absolute top-0 start-0 m-3 badge {% if item.item_type == 'lost' %}badge-lost{% else %}badge-found{% endif %} px-3 py-1.5 rounded-pill shadow-sm text-uppercase fw-bold" style="font-size: 0.75rem;">
+                    <span class="position-absolute top-0 start-0 m-2 badge {% if item.item_type == 'lost' %}badge-lost{% else %}badge-found{% endif %} px-2 py-1 rounded-pill shadow-sm text-uppercase fw-bold badge-compact-mobile">
                         {% if item.item_type == 'lost' %}🔴 Lost{% else %}🟢 Found{% endif %}
                     </span>
 
                     <!-- Right Status Badge -->
-                    <span class="position-absolute top-0 end-0 m-3 badge {% if item.status == 'resolved' %}bg-secondary text-white{% else %}bg-success text-white{% endif %} px-2.5 py-1.5 rounded-pill shadow-sm fw-bold" style="font-size: 0.75rem;">
+                    <span class="position-absolute top-0 end-0 m-2 badge {% if item.status == 'resolved' %}bg-secondary text-white{% else %}bg-success text-white{% endif %} px-2 py-1 rounded-pill shadow-sm fw-bold badge-compact-mobile">
                         {% if item.status == 'resolved' %}
                             <i class="bi bi-check2-all"></i> Resolved
                         {% else %}
-                            <i class="bi bi-circle-fill" style="font-size: 0.55rem;"></i> Active
+                            <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Active
                         {% endif %}
                     </span>
                 </div>
 
-                <div class="card-body d-flex flex-column p-3">
-                    <div class="d-flex justify-content-between align-items-start mb-1">
-                        <h5 class="card-title fw-bold text-dark mb-0 text-truncate" title="{{ item.title }}">{{ item.title }}</h5>
-                    </div>
+                <div class="item-card-body">
+                    <h5 class="item-card-title" title="{{ item.title }}">{{ item.title }}</h5>
                     
-                    <span class="badge bg-light text-secondary border mb-2 align-self-start small text-capitalize">
+                    <span class="badge bg-light text-secondary border mb-1 mb-md-2 align-self-start badge-compact-mobile text-capitalize">
                         <i class="bi bi-tag-fill me-1"></i> {{ item.category }}
                     </span>
 
-                    <p class="text-muted small flex-grow-1 mb-3 text-truncate-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    <p class="item-card-desc flex-grow-1">
                         {{ item.description }}
                     </p>
 
-                    <div class="border-top pt-2 mt-auto text-muted small mb-3">
+                    <div class="border-top pt-2 mt-auto text-muted item-meta-mobile mb-2">
                         <div class="text-truncate" title="{{ item.location }}"><i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ item.location }}</div>
                         <div><i class="bi bi-calendar3 text-primary me-1"></i> {{ item.date }}</div>
                     </div>
 
                     <!-- Action Controls -->
-                    <div class="d-flex flex-column gap-2" onclick="event.stopPropagation();">
-                        <div class="d-flex gap-2">
+                    <div class="d-flex flex-column gap-1.5" onclick="event.stopPropagation();">
+                        <div class="d-flex gap-1">
                             {% if item.status == 'resolved' %}
-                            <a href="/toggle-status/{{ item.id }}/" class="btn btn-outline-secondary btn-sm flex-fill fw-semibold rounded-pill" title="Reactivate this post to show on Explore page">
-                                <i class="bi bi-arrow-clockwise me-1"></i> Reactivate Post
+                            <a href="/toggle-status/{{ item.id }}/" class="btn btn-outline-secondary btn-sm flex-fill fw-semibold item-btn-mobile rounded-3" title="Reactivate this post">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Reactivate
                             </a>
                             {% else %}
-                            <a href="/toggle-status/{{ item.id }}/" class="btn btn-outline-success btn-sm flex-fill fw-bold rounded-pill" title="Mark item as recovered or returned">
-                                <i class="bi bi-check-circle-fill me-1"></i> Mark as Resolved
+                            <a href="/toggle-status/{{ item.id }}/" class="btn btn-outline-success btn-sm flex-fill fw-bold item-btn-mobile rounded-3" title="Mark item as recovered or returned">
+                                <i class="bi bi-check-circle-fill me-1"></i> Resolved
                             </a>
                             {% endif %}
                         </div>
 
-                        <div class="d-flex gap-2">
-                            <a href="/edit/{{ item.id }}/" class="btn btn-outline-primary btn-sm flex-fill fw-semibold rounded-pill">
-                                <i class="bi bi-pencil-square me-1"></i> Edit
+                        <div class="d-flex gap-1 mt-1">
+                            <a href="/edit/{{ item.id }}/" class="btn btn-outline-primary btn-sm flex-fill fw-semibold item-btn-mobile rounded-3">
+                                <i class="bi bi-pencil-square"></i> Edit
                             </a>
-                            <button type="button" class="btn btn-outline-danger btn-sm flex-fill fw-semibold rounded-pill" onclick="confirmDelete('/delete/{{ item.id }}/', '{{ item.title|escapejs }}');">
-                                <i class="bi bi-trash me-1"></i> Delete
+                            <button type="button" class="btn btn-outline-danger btn-sm flex-fill fw-semibold item-btn-mobile rounded-3" onclick="confirmDelete('/delete/{{ item.id }}/', '{{ item.title|escapejs }}');">
+                                <i class="bi bi-trash"></i> Del
                             </button>
                         </div>
                     </div>
