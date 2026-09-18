@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: lostfound-portal
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn lostfound.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: WEB_CONCURRENCY
+        value: 4
