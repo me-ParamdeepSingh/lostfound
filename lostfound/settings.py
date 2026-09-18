@@ -166,6 +166,8 @@ STORAGES = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+os.makedirs(MEDIA_ROOT, exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'items'), exist_ok=True)
 
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
