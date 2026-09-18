@@ -101,7 +101,7 @@ def register(request):
         if form.is_valid():
             otp = random.randint(1000, 9999)
 
-            request.session['otp'] = otp
+            request.session['otp'] = str(otp)
             request.session['user_data'] = form.cleaned_data
 
             email_sent = True
@@ -111,17 +111,20 @@ def register(request):
                     f'Hello {form.cleaned_data["username"]},\n\nYour 4-digit verification code is: {otp}\n\nPlease enter this on the portal to activate your account.\n\nThanks,\nLost & Found Community Team',
                     settings.DEFAULT_FROM_EMAIL,
                     [form.cleaned_data['email']],
-                    fail_silently=False,
+                    fail_silently=True,
                 )
             except Exception as e:
                 print(f"[OTP Email Error]: {e}")
-                print(f"[FALLBACK LOG - OTP FOR {form.cleaned_data['email']} IS: {otp}]")
                 email_sent = False
 
+            print(f"==================================================")
+            print(f"🔑 [REGISTRATION OTP FOR {form.cleaned_data['email']}]: {otp}")
+            print(f"==================================================")
+
             if email_sent:
-                messages.info(request, f'📨 A 4-digit OTP has been dispatched to {form.cleaned_data["email"]}.')
+                messages.info(request, f'📨 A 4-digit OTP has been sent to {form.cleaned_data["email"]}.')
             else:
-                messages.warning(request, f'⚠️ Email service is temporarily slow. Please check OTP in server console or retry.')
+                messages.warning(request, f'⚠️ Email service is temporarily slow. Please check your inbox or retry.')
 
             return redirect('verify_otp')
         else:

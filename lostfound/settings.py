@@ -143,10 +143,17 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
+# Session & Security Settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_AGE = 86400  # 1 day
+
+# Email Settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'lostfoundteam3@gmail.com'
-EMAIL_HOST_PASSWORD = 'vfunexvwlyzoxnih'
+EMAIL_TIMEOUT = 10
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'lostfoundteam3@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'vfunexvwlyzoxnih')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
