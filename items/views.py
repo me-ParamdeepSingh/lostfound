@@ -13,11 +13,90 @@ from lostfound import settings
 from .models import Item, Profile, Claim, Conversation, ChatMessage, SmartTag
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+import os
+import urllib.request
+import urllib.error
 import random
 from django.core.mail import send_mail
 from .forms import RegisterForm
 from django.contrib.auth.models import User
 from django.contrib.auth import login
+
+
+def send_portal_email(subject, message, recipient_list, html_message=None):
+    """
+    Sends email using Brevo HTTPS REST API (Port 443 - zero timeout, works on cloud hosts).
+    Falls back to Django SMTP backend if needed.
+    """
+    if not recipient_list:
+        return False
+
+    valid_recipients = [r.strip() for r in recipient_list if r and str(r).strip()]
+    if not valid_recipients:
+        return False
+
+    api_key = os.environ.get('EMAIL_HOST_PASSWORD', '').strip()
+    from_email = os.environ.get('DEFAULT_FROM_EMAIL', 'lostfoundteam3@gmail.com').strip()
+
+    # If Brevo API key is available
+    if api_key and (api_key.startswith('xsmtpsib-') or api_key.startswith('xkeysib-') or len(api_key) > 30):
+        try:
+            url = "https://api.brevo.com/v3/smtp/email"
+            headers = {
+                "accept": "application/json",
+                "api-key": api_key,
+                "content-type": "application/json",
+                "User-Agent": "LostFoundPortal/1.0"
+            }
+            formatted_html = html_message or f"""
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: 0 auto; padding: 24px; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; color: #1e293b;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: #2563eb; margin: 0; font-size: 22px;">📍 Lost &amp; Found Portal</h2>
+                </div>
+                <div style="font-size: 15px; line-height: 1.6; color: #334155; white-space: pre-line;">
+                    {message}
+                </div>
+                <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px;">
+                <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">
+                    This is an automated notification from the Lost &amp; Found Community Platform.
+                </p>
+            </div>
+            """
+            payload = {
+                "sender": {
+                    "name": "Lost & Found Community",
+                    "email": from_email
+                },
+                "to": [{"email": r} for r in valid_recipients],
+                "subject": subject,
+                "textContent": message,
+                "htmlContent": formatted_html
+            }
+            req_data = json.dumps(payload).encode('utf-8')
+            req = urllib.request.Request(url, data=req_data, headers=headers, method='POST')
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                resp_data = resp.read().decode('utf-8')
+                print(f"✅ [Brevo HTTPS API Success]: Email sent to {valid_recipients} (Status: {resp.status}) - {resp_data}")
+                return True
+        except urllib.error.HTTPError as he:
+            err_body = he.read().decode('utf-8', errors='ignore')
+            print(f"❌ [Brevo HTTPS API HTTP Error {he.code}]: {err_body}")
+        except Exception as ex:
+            print(f"❌ [Brevo HTTPS API Exception]: {ex}")
+
+    # Fallback to standard Django send_mail
+    try:
+        sent = send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            valid_recipients,
+            fail_silently=False,
+        )
+        return (sent > 0)
+    except Exception as e:
+        print(f"❌ [Django SMTP Fallback Error]: {e}")
+        return False
 
 
 def mask_phone_number(phone):
@@ -104,19 +183,11 @@ def register(request):
             request.session['otp'] = str(otp)
             request.session['user_data'] = form.cleaned_data
 
-            email_sent = False
-            try:
-                sent_count = send_mail(
-                    'Your OTP Verification Code - Lost & Found Portal',
-                    f'Hello {form.cleaned_data["username"]},\n\nYour 4-digit verification code is: {otp}\n\nPlease enter this on the portal to activate your account.\n\nThanks,\nLost & Found Community Team',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [form.cleaned_data['email']],
-                    fail_silently=False,
-                )
-                email_sent = (sent_count > 0)
-            except Exception as e:
-                print(f"❌ [OTP Email Error]: {e}")
-                email_sent = False
+            email_sent = send_portal_email(
+                'Your OTP Verification Code - Lost & Found Portal',
+                f'Hello {form.cleaned_data["username"]},\n\nYour 4-digit verification code is: {otp}\n\nPlease enter this on the portal to activate your account.\n\nThanks,\nLost & Found Community Team',
+                [form.cleaned_data['email']]
+            )
 
             print(f"==================================================")
             print(f"🔑 [REGISTRATION OTP FOR {form.cleaned_data['email']}]: {otp}")
@@ -125,7 +196,7 @@ def register(request):
             if email_sent:
                 messages.success(request, f'📨 A 4-digit OTP has been sent to {form.cleaned_data["email"]}. Please check your inbox or spam folder.')
             else:
-                messages.warning(request, f'⚠️ Email sending in progress. Please check your inbox/spam or retry.')
+                messages.info(request, f'📨 OTP generated. Please check your inbox or use the OTP to verify.')
 
             return redirect('verify_otp')
         else:
@@ -523,12 +594,10 @@ def claim_item(request, id):
         Thanks,
         Lost & Found Team
         """
-        send_mail(
-            "Claim Request",
+        send_portal_email(
+            "Claim Request - Lost & Found Portal",
             msg,
-            settings.DEFAULT_FROM_EMAIL,
-            [item.user.email],
-            fail_silently=True,
+            [item.user.email]
         )
 
         messages.success(request, f'📨 Claim request sent for "{item.title}". The owner has been notified via email.')
@@ -568,12 +637,10 @@ def approve_claim(request, id):
     Lost & Found Team
     """
 
-    send_mail(
-        "Claim Approved",
+    send_portal_email(
+        "Claim Approved - Lost & Found Portal",
         message,
-        settings.DEFAULT_FROM_EMAIL,
-        [claim.user.email],
-        fail_silently=True,
+        [claim.user.email]
     )
 
     messages.success(request, f'✅ Claim approved for "{claim.item.title}". Item marked as resolved!')
@@ -601,12 +668,10 @@ def reject_claim(request, id):
     Thanks,
     Lost & Found Team
     """
-    send_mail(
-        "Claim Rejected",
+    send_portal_email(
+        "Claim Rejected - Lost & Found Portal",
         message,
-        settings.DEFAULT_FROM_EMAIL,
-        [claim.user.email],
-        fail_silently=True,
+        [claim.user.email]
     )
 
     messages.warning(request, f'❌ Claim rejected for "{claim.item.title}".')
@@ -773,12 +838,10 @@ def scan_smart_tag(request, tag_code):
         Lost & Found Smart Tag System
         """
 
-        send_mail(
+        send_portal_email(
             f"🚨 Smart Tag Scanned: {tag.item_name}",
             email_content,
-            settings.DEFAULT_FROM_EMAIL,
-            [tag.user.email],
-            fail_silently=True,
+            [tag.user.email]
         )
 
         success_message = "Thank you! An instant notification has been dispatched to the owner with your message and location."
