@@ -176,6 +176,8 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] if os.path.exists(os.path.join(BASE_DIR, 'static')) else []
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+WHITENOISE_MANIFEST_STRICT = False
+WHITENOISE_AUTOREFRESH = True
 
 # Cloudinary Storage Settings (Permanent Media Storage)
 CLOUDINARY_STORAGE = {
@@ -225,7 +227,7 @@ CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
 
 # Email Settings (Brevo / Sendinblue or Gmail SMTP)
-BREVO_API_KEY = os.environ.get('BREVO_API_KEY', os.environ.get('EMAIL_HOST_PASSWORD', ''))
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp-relay.brevo.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))

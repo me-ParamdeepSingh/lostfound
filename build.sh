@@ -4,9 +4,9 @@ set -o errexit
 
 chmod +x start.sh build.sh || true
 
-pip install -r requirements.txt
-
-python manage.py collectstatic --no-input
+# Clear and collect static assets cleanly
+rm -rf staticfiles/
+python manage.py collectstatic --no-input --clear
 
 # Run migrations on database
 echo "==> Running PostgreSQL database migrations..."
