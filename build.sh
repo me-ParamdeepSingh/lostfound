@@ -4,7 +4,10 @@ set -o errexit
 
 chmod +x start.sh build.sh || true
 
-# Clear and collect static assets cleanly
+# 1. Install all dependencies
+pip install -r requirements.txt
+
+# 2. Clear and collect static assets cleanly
 rm -rf staticfiles/
 python manage.py collectstatic --no-input --clear
 
