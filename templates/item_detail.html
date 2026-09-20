@@ -18,7 +18,7 @@
                 <div class="card border-0 shadow-sm p-3 mb-4 bg-white position-relative">
                     {% if item.image %}
                     <div class="position-relative overflow-hidden rounded-3" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#imageLightboxModal" title="Click to inspect in full resolution">
-                        <img src="{{ item.image.url }}" class="img-fluid rounded-3 shadow-sm w-100" style="max-height: 420px; object-fit: contain; background:#f8fafc; transition: transform 0.3s ease;" alt="{{ item.title }}">
+                        <img src="{{ item.image.url }}" class="img-fluid rounded-3 shadow-sm w-100" style="max-height: 420px; object-fit: contain; background:#f8fafc; transition: transform 0.3s ease;" alt="{{ item.title }}" onerror="this.onerror=null; this.src='https://placehold.co/600x400/f1f5f9/94a3b8?text=Photo+Unavailable';">
                         <span class="position-absolute bottom-0 end-0 m-3 badge bg-dark bg-opacity-75 text-white px-3 py-1.5 rounded-pill shadow-sm small">
                             <i class="bi bi-zoom-in me-1"></i> Click to Zoom Fullscreen
                         </span>
